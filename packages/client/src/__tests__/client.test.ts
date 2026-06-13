@@ -141,6 +141,18 @@ describe('call', () => {
     expect(body).toMatchObject({ method: 'evaluate', timeoutMs: 1234 });
   });
 
+  it('surfaces a non-JSON error response as ok:false instead of throwing', async () => {
+    const htmlResponse = new Response('<html>502 Bad Gateway</html>', {
+      status: 502,
+      headers: { 'content-type': 'text/html' },
+    });
+    const { impl } = scriptedFetch([htmlResponse]);
+    const client = new BrowserHandleClient({ relayUrl: 'http://r', fetchImpl: impl });
+    const res = await client.call('h1', 'ping');
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.code).toBe('HTTP_502');
+  });
+
   it('url-encodes the handle id', async () => {
     const { impl, calls } = scriptedFetch([jsonResponse(200, { ok: true, result: null })]);
     const client = new BrowserHandleClient({ relayUrl: 'http://r/', fetchImpl: impl });

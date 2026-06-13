@@ -4,6 +4,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { HandleBinding } from '../handle-binding.js';
+import { BrowserHandleError } from '@browserhandle/client';
 import type { BrowserHandleClient } from '@browserhandle/client';
 import type { CallResponse, HandleInfo } from '@browserhandle/protocol';
 
@@ -88,6 +89,77 @@ describe('HandleBinding explicit binding', () => {
     binding.selectHandle('second');
     await binding.requestWithRetry('ping');
     expect(calls.map((c) => c.id)).toEqual(['first', 'second']);
+  });
+});
+
+describe('HandleBinding error propagation', () => {
+  it('preserves a relay error code from listHandles (does not mask as HANDLE_NOT_FOUND)', async () => {
+    const client = {
+      listHandles: vi.fn(async () => {
+        throw new BrowserHandleError('UNAUTHORIZED', 'Relay rejected the agent token', 401);
+      }),
+      call: vi.fn(),
+      health: vi.fn(),
+    } as unknown as BrowserHandleClient;
+    const binding = new HandleBinding(client);
+    const msg = await binding.requestWithRetry('ping');
+    expect(msg.type).toBe('error');
+    expect((msg.payload as { code: string }).code).toBe('UNAUTHORIZED');
+  });
+});
+
+describe('HandleBinding disconnect auto-recovery', () => {
+  it('rebinds to a newly-connected handle when an auto-bound handle disconnects', async () => {
+    const callLog: string[] = [];
+    // Initially only 'a' is connected, so the first auto-bind picks it.
+    let handles: HandleInfo[] = [handle('a')];
+    const client = {
+      listHandles: vi.fn(async () => handles),
+      call: vi.fn(async (id: string) => {
+        callLog.push(id);
+        if (id === 'a') {
+          // 'a' has dropped; now 'b' is the only connected handle.
+          handles = [handle('a', false), handle('b')];
+          return { ok: false, error: { code: 'HANDLE_DISCONNECTED', message: 'gone' } } as CallResponse;
+        }
+        return { ok: true, result: { ok: true } } as CallResponse;
+      }),
+      health: vi.fn(),
+    } as unknown as BrowserHandleClient;
+
+    const binding = new HandleBinding(client);
+    const msg = await binding.requestWithRetry('ping');
+    expect(callLog).toEqual(['a', 'b']);
+    expect(msg.type).toBe('response');
+    expect(binding.getBoundHandleId()).toBe('b');
+  });
+
+  it('does NOT auto-switch away from an explicit --handle binding', async () => {
+    const client = {
+      listHandles: vi.fn(async () => [handle('b')]),
+      call: vi.fn(async () => ({ ok: false, error: { code: 'HANDLE_DISCONNECTED', message: 'gone' } } as CallResponse)),
+      health: vi.fn(),
+    } as unknown as BrowserHandleClient;
+    const binding = new HandleBinding(client, { handleId: 'explicit' });
+    const msg = await binding.requestWithRetry('ping');
+    expect(msg.type).toBe('error');
+    expect((msg.payload as { code: string }).code).toBe('HANDLE_DISCONNECTED');
+    expect(binding.getBoundHandleId()).toBe('explicit');
+    expect(client.listHandles).not.toHaveBeenCalled();
+  });
+});
+
+describe('HandleBinding concurrent auto-bind', () => {
+  it('lists handles only once for concurrent first calls', async () => {
+    const { client } = mockClient({ handles: [handle('only')] });
+    const binding = new HandleBinding(client);
+    await Promise.all([
+      binding.requestWithRetry('ping'),
+      binding.requestWithRetry('ping'),
+      binding.requestWithRetry('ping'),
+    ]);
+    expect(client.listHandles).toHaveBeenCalledTimes(1);
+    expect(binding.getBoundHandleId()).toBe('only');
   });
 });
 

@@ -131,8 +131,15 @@ export class BrowserHandleClient {
       }
 
       if (res.status === 200 || !TRANSIENT_STATUSES.has(res.status)) {
-        // Definitive: the relay's body is already a CallResponse envelope.
-        return (await res.json()) as CallResponse;
+        // Definitive: the relay's body is normally a CallResponse envelope.
+        // A non-JSON body (e.g. an HTML error page from a proxy) is surfaced
+        // as { ok: false } rather than throwing a SyntaxError at the caller.
+        const parsed = (await res.json().catch(() => null)) as CallResponse | null;
+        if (parsed) return parsed;
+        return {
+          ok: false,
+          error: { code: `HTTP_${res.status}`, message: `Relay returned a non-JSON ${res.status} response` },
+        };
       }
 
       // Transient relay-level status (429/503/504): retry, then surface.
