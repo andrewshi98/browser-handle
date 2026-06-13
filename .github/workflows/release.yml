@@ -24,13 +24,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
-      # Extension zipをビルド
+      # Package the built extension as a release artifact
       - name: Build extension zip
         run: |
           cd packages/extension/dist
           zip -r ../../../browserhandle-extension-${GITHUB_REF_NAME}.zip .
 
-      # リリースノートをコミットログから生成
+      # Generate release notes from the commit log since the previous tag
       - name: Generate release notes
         run: |
           PREV_TAG=$(git tag --sort=-v:refname | grep '^v' | sed -n '2p')
@@ -41,7 +41,7 @@ jobs:
             echo "Initial release" > release-notes.md
           fi
 
-      # GitHub Release作成 + zip添付
+      # Create the GitHub Release with the extension zip attached
       - name: Create GitHub Release
         run: |
           gh release create "$GITHUB_REF_NAME" \
@@ -50,9 +50,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # npm publish
+      # npm publish in dependency order (workspace:* is rewritten at publish time)
       - name: Publish @browserhandle/protocol
         run: pnpm --filter @browserhandle/protocol publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @browserhandle/client
+        run: pnpm --filter @browserhandle/client publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @browserhandle/relay
+        run: pnpm --filter @browserhandle/relay publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
