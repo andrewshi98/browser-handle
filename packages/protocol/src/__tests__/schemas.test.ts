@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   bridgeMessageSchema,
   bridgeErrorPayloadSchema,
-  chunkedMessageSchema,
+  registerMessageSchema,
+  callRequestSchema,
   navigateToSchema,
   pageSnapshotSchema,
   clickSchema,
@@ -167,24 +168,68 @@ describe('listWebMCPToolsSchema', () => {
   });
 });
 
-describe('chunkedMessageSchema', () => {
-  it('accepts valid chunked message', () => {
-    const result = chunkedMessageSchema.safeParse({
-      id: 'msg-1',
-      chunkIndex: 0,
-      totalChunks: 3,
-      data: 'base64data',
+describe('registerMessageSchema', () => {
+  it('accepts a valid register message', () => {
+    const result = registerMessageSchema.safeParse({
+      type: 'register',
+      protocolVersion: 1,
+      handleId: 'b7e4c1d2-1234-4abc-9def-001122334455',
+      token: 'secret',
+      name: 'Work laptop',
+      meta: { extensionVersion: '0.1.0' },
     });
     expect(result.success).toBe(true);
   });
 
-  it('rejects negative chunkIndex', () => {
-    const result = chunkedMessageSchema.safeParse({
-      id: 'msg-1',
-      chunkIndex: -1,
-      totalChunks: 3,
-      data: 'data',
+  it('accepts a minimal register message', () => {
+    const result = registerMessageSchema.safeParse({
+      type: 'register',
+      protocolVersion: 1,
+      handleId: 'abc',
     });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a missing handleId', () => {
+    const result = registerMessageSchema.safeParse({
+      type: 'register',
+      protocolVersion: 1,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a wrong type literal', () => {
+    const result = registerMessageSchema.safeParse({
+      type: 'hello',
+      protocolVersion: 1,
+      handleId: 'abc',
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('callRequestSchema', () => {
+  it('accepts a valid call request', () => {
+    const result = callRequestSchema.safeParse({
+      method: 'click',
+      payload: { ref: '@e1', snapshotId: 'snap-1' },
+      timeoutMs: 5000,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a payload-less call', () => {
+    const result = callRequestSchema.safeParse({ method: 'listTabs' });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects an unknown method', () => {
+    const result = callRequestSchema.safeParse({ method: 'launchMissiles' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a non-positive timeout', () => {
+    const result = callRequestSchema.safeParse({ method: 'ping', timeoutMs: 0 });
     expect(result.success).toBe(false);
   });
 });

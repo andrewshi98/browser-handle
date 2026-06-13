@@ -2,6 +2,7 @@
  * Zod schemas for message validation.
  */
 import { z } from 'zod';
+import { BRIDGE_METHODS } from './types/bridge.js';
 
 // Bridge message schemas
 export const bridgeMessageSchema = z.object({
@@ -18,11 +19,25 @@ export const bridgeErrorPayloadSchema = z.object({
   details: z.unknown().optional(),
 });
 
-export const chunkedMessageSchema = z.object({
-  id: z.string().min(1),
-  chunkIndex: z.number().int().min(0),
-  totalChunks: z.number().int().min(1),
-  data: z.string(),
+// Relay protocol schemas
+export const registerMessageSchema = z.object({
+  type: z.literal('register'),
+  protocolVersion: z.number().int().min(1),
+  handleId: z.string().min(1).max(128),
+  token: z.string().optional(),
+  name: z.string().max(128).optional(),
+  meta: z
+    .object({
+      extensionVersion: z.string().optional(),
+      userAgent: z.string().optional(),
+    })
+    .optional(),
+});
+
+export const callRequestSchema = z.object({
+  method: z.enum(BRIDGE_METHODS),
+  payload: z.unknown().optional(),
+  timeoutMs: z.number().int().positive().optional(),
 });
 
 // MCP tool parameter schemas

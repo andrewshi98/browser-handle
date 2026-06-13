@@ -13,7 +13,17 @@ export type ErrorCode =
   | 'HANDLER_ERROR'
   | 'CONTENT_SCRIPT_ERROR'
   | 'SCREENSHOT_FAILED'
-  | 'DIALOG_NOT_FOUND';
+  | 'DIALOG_NOT_FOUND'
+  // Relay-level errors
+  | 'HANDLE_NOT_FOUND'
+  | 'HANDLE_DISCONNECTED'
+  | 'UNAUTHORIZED'
+  | 'RELAY_TIMEOUT'
+  | 'PROTOCOL_MISMATCH'
+  | 'RELAY_BUSY'
+  | 'INVALID_REQUEST'
+  // Reserved for the extension-side policy gate (no enforcement yet)
+  | 'POLICY_DENIED';
 
 /** Map of error codes to human-readable recovery suggestions */
 export const ERROR_RECOVERY: Record<ErrorCode, string> = {
@@ -37,4 +47,20 @@ export const ERROR_RECOVERY: Record<ErrorCode, string> = {
     'Failed to capture a screenshot. Ensure the tab is visible and not a chrome:// page.',
   DIALOG_NOT_FOUND:
     'No JavaScript dialog (alert/confirm/prompt) was detected on this tab. The dialog may have already been dismissed.',
+  HANDLE_NOT_FOUND:
+    'No browser handle with that ID is registered on the relay. Use list_browser_handles to see available handles.',
+  HANDLE_DISCONNECTED:
+    'The browser handle is currently disconnected. It reconnects automatically when the browser is running - retry shortly, or check list_browser_handles.',
+  UNAUTHORIZED:
+    'The relay rejected the credentials. Check the configured token.',
+  RELAY_TIMEOUT:
+    'The browser did not answer within the operation timeout. The page may be busy or blocked by a dialog - try again or use handle_dialog.',
+  PROTOCOL_MISMATCH:
+    'The extension and relay speak different protocol versions. Update the extension and relay to matching releases.',
+  RELAY_BUSY:
+    'Too many requests are already in flight for this handle. Wait for pending operations to finish and retry.',
+  INVALID_REQUEST:
+    'The request was malformed. Check the method name and payload against the protocol documentation.',
+  POLICY_DENIED:
+    'The browser-side policy gate denied this action.',
 };

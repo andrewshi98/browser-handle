@@ -1,0 +1,52 @@
+{
+  "name": "@browserhandle/relay",
+  "version": "0.1.0",
+  "description": "BrowserHandle relay server - routes agents to browser extensions by browser_handle_id",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andrewshi98/browser-handle",
+    "directory": "packages/relay"
+  },
+  "homepage": "https://github.com/andrewshi98/browser-handle#readme",
+  "keywords": [
+    "browser-control",
+    "relay",
+    "chrome-extension",
+    "ai-agent",
+    "browser-automation"
+  ],
+  "bin": {
+    "browserhandle-relay": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist .turbo",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@browserhandle/protocol": "workspace:*",
+    "ws": "^8.18.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

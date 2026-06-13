@@ -1,6 +1,6 @@
 /**
- * Internal message protocol between MCP Server and Chrome Extension.
- * Messages are sent via Chrome Native Messaging (32-bit length-prefixed JSON).
+ * Bridge message protocol between the relay and the Chrome extension.
+ * Messages are JSON frames exchanged over a WebSocket connection.
  */
 
 export type BridgeMessageType = 'request' | 'response' | 'ack' | 'error';
@@ -14,12 +14,12 @@ export interface BridgeMessage {
   timestamp: number;
 }
 
-/** Request from MCP Server to Extension */
+/** Request from relay to Extension */
 export interface BridgeRequest extends BridgeMessage {
   type: 'request';
 }
 
-/** Successful response from Extension to MCP Server */
+/** Successful response from Extension to relay */
 export interface BridgeResponse extends BridgeMessage {
   type: 'response';
 }
@@ -39,35 +39,31 @@ export interface BridgeError extends BridgeMessage {
   };
 }
 
-/** All bridge method names for type-safe dispatch */
-export type BridgeMethod =
-  | 'navigate'
-  | 'snapshot'
-  | 'click'
-  | 'hover'
-  | 'typeText'
-  | 'selectOption'
-  | 'listWebMCPTools'
-  | 'invokeWebMCPTool'
-  | 'screenshot'
-  | 'ping'
-  | 'newTab'
-  | 'listTabs'
-  | 'switchTab'
-  | 'closeTab'
-  | 'goBack'
-  | 'goForward'
-  | 'reload'
-  | 'waitForNavigation'
-  | 'scrollPage'
-  | 'dropFiles'
-  | 'handleDialog'
-  | 'evaluate';
+/** All bridge method names, as a runtime list (used for validation) */
+export const BRIDGE_METHODS = [
+  'navigate',
+  'snapshot',
+  'click',
+  'hover',
+  'typeText',
+  'selectOption',
+  'listWebMCPTools',
+  'invokeWebMCPTool',
+  'screenshot',
+  'ping',
+  'newTab',
+  'listTabs',
+  'switchTab',
+  'closeTab',
+  'goBack',
+  'goForward',
+  'reload',
+  'waitForNavigation',
+  'scrollPage',
+  'dropFiles',
+  'handleDialog',
+  'evaluate',
+] as const;
 
-/** Chunked message for large payloads (>1MB Native Messaging limit) */
-export interface ChunkedMessage {
-  id: string;
-  chunkIndex: number;
-  totalChunks: number;
-  data: string;
-}
+/** All bridge method names for type-safe dispatch */
+export type BridgeMethod = (typeof BRIDGE_METHODS)[number];
