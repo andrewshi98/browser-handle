@@ -1,6 +1,6 @@
 {
   "name": "@browserhandle/relay",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "BrowserHandle relay server - routes agents to browser extensions by browser_handle_id",
   "type": "module",
   "license": "MIT",

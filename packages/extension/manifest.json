@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BrowserHandle",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Expose this browser as a live, permissioned handle that agents control through a relay.",
   "permissions": [
     "activeTab",

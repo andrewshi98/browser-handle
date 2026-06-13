@@ -16,3 +16,6 @@ browserhandle-extension-*.zip
 
 # Chrome for Testing installed locally for E2E (npx @puppeteer/browsers install chrome@stable)
 /chrome/
+
+# Local npm auth (never commit)
+.npmrc

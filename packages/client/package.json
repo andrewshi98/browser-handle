@@ -1,6 +1,6 @@
 {
   "name": "@browserhandle/client",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "BrowserHandle client - typed HTTP client for the relay's agent API",
   "type": "module",
   "license": "MIT",

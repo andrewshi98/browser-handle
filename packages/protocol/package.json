@@ -1,6 +1,6 @@
 {
   "name": "@browserhandle/protocol",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "BrowserHandle wire protocol - shared types, schemas, and constants",
   "type": "module",
   "license": "MIT",
