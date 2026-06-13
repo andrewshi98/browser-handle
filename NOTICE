@@ -1,0 +1,7 @@
+BrowserHandle
+Copyright (c) 2026 Andrew Shi and BrowserHandle contributors
+
+This project is derived from WebClaw (https://github.com/kuroko1t/webclaw),
+Copyright (c) 2025-2026 kuroko1t, used under the MIT License.
+Imported at upstream commit fa67f87169adcf041b6602fb178036c49a0a0af2.
+The original license text is preserved in LICENSE.
