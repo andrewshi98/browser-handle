@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createBrowserHandleServer } from '../server.js';
-import type { WebSocketClient } from '../ws-client.js';
+import type { BrowserTransport } from '../transport.js';
 import type { BridgeMessage, BridgeMethod } from '@browserhandle/protocol';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -20,7 +20,7 @@ const PKG_VERSION = JSON.parse(readFileSync(resolve(__dirname, '../../package.js
 
 /** Create a mock WebSocketClient that resolves requests with a handler. */
 function createMockWsClient(): {
-  wsClient: WebSocketClient;
+  wsClient: BrowserTransport;
   setHandler: (fn: (method: string, payload: unknown) => BridgeMessage) => void;
 } {
   let handler: ((method: string, payload: unknown) => BridgeMessage) | null = null;
@@ -42,9 +42,12 @@ function createMockWsClient(): {
   const wsClient = {
     request: requestImpl,
     requestWithRetry: requestImpl,
-    isConnected: vi.fn(() => true),
-    close: vi.fn(async () => {}),
-  } as unknown as WebSocketClient;
+    listHandles: vi.fn(async () => [
+      { handleId: 'mock-handle', name: 'Mock', connected: true, connectedAt: '', lastSeenAt: '', protocolVersion: 1 },
+    ]),
+    getBoundHandleId: vi.fn(() => 'mock-handle'),
+    selectHandle: vi.fn(),
+  } as unknown as BrowserTransport;
 
   return {
     wsClient,
@@ -74,6 +77,8 @@ const EXPECTED_TOOLS = [
   'drop_files',
   'handle_dialog',
   'evaluate',
+  'list_browser_handles',
+  'select_browser_handle',
 ];
 
 describe('MCP Protocol integration (in-process)', () => {
@@ -83,7 +88,7 @@ describe('MCP Protocol integration (in-process)', () => {
   beforeAll(async () => {
     mockWs = createMockWsClient();
 
-    const server = createBrowserHandleServer({ wsClient: mockWs.wsClient });
+    const server = createBrowserHandleServer({ transport: mockWs.wsClient });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 
     mcpClient = new Client({ name: 'test-client', version: '0.0.1' });
@@ -105,9 +110,9 @@ describe('MCP Protocol integration (in-process)', () => {
   });
 
   // --- tools/list ---
-  it('lists all 21 tools', async () => {
+  it('lists all 23 tools', async () => {
     const result = await mcpClient.listTools();
-    expect(result.tools).toHaveLength(21);
+    expect(result.tools).toHaveLength(23);
     const names = result.tools.map((t) => t.name).sort();
     expect(names).toEqual([...EXPECTED_TOOLS].sort());
   });

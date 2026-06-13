@@ -6,20 +6,36 @@ Element.prototype.scrollIntoView = vi.fn();
 // Set up DOM before importing sidepanel
 function setupDOM() {
   document.body.innerHTML = `
+    <span id="status" class="status idle">Idle</span>
+    <button id="clearBtn">Clear</button>
+    <details id="settings">
+      <input id="relayUrl" type="text" />
+      <input id="token" type="password" />
+      <input id="name" type="text" />
+      <input id="enabled" type="checkbox" />
+      <button id="saveBtn" type="button">Save</button>
+      <div id="statusDetail"></div>
+      <div id="handleId"></div>
+    </details>
     <div id="logContainer">
       <div id="emptyState" style="display: flex">No activity</div>
     </div>
-    <span id="status">Idle</span>
-    <button id="clearBtn">Clear</button>
   `;
 }
 
-// Mock chrome.runtime.onMessage
+// Mock chrome APIs used by the side panel.
 const messageListeners: Function[] = [];
 vi.stubGlobal('chrome', {
   runtime: {
     onMessage: {
       addListener: vi.fn((fn: Function) => messageListeners.push(fn)),
+    },
+    sendMessage: vi.fn(() => Promise.resolve(null)),
+  },
+  storage: {
+    local: {
+      get: vi.fn(() => Promise.resolve({})),
+      set: vi.fn(() => Promise.resolve()),
     },
   },
 });
@@ -86,19 +102,37 @@ describe('sidepanel', () => {
     expect(emptyState.style.display).toBe('none');
   });
 
-  it('updates status to Active', () => {
+  it('reflects relay connection status, not activity', () => {
     const listener = messageListeners[0];
     const statusEl = document.getElementById('status')!;
-    expect(statusEl.textContent).toBe('Idle');
 
+    // Activity messages do NOT change the connection badge.
     listener({
       channel: 'browserhandle-sidepanel-update',
       type: 'activity',
       data: { action: 'snapshot', timestamp: Date.now() },
     });
+    expect(statusEl.textContent).toBe('Idle');
 
-    expect(statusEl.textContent).toBe('Active');
+    // A status message does.
+    listener({
+      channel: 'browserhandle-status',
+      status: { state: 'ready', handleId: 'h-1', relayUrl: 'ws://r/ws/browser', detail: 'relay 0.1.0' },
+    });
+    expect(statusEl.textContent).toBe('Connected');
     expect(statusEl.classList.contains('connected')).toBe(true);
+    expect(document.getElementById('handleId')!.textContent).toContain('h-1');
+  });
+
+  it('shows an auth-error status', () => {
+    const listener = messageListeners[0];
+    listener({
+      channel: 'browserhandle-status',
+      status: { state: 'auth-error', handleId: 'h-1', relayUrl: 'ws://r/ws/browser', detail: 'UNAUTHORIZED' },
+    });
+    const statusEl = document.getElementById('status')!;
+    expect(statusEl.textContent).toBe('Auth failed');
+    expect(statusEl.classList.contains('error')).toBe(true);
   });
 
   it('clear button removes all entries', () => {

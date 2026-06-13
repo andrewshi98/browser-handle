@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "BrowserHandle",
   "version": "0.1.0",
-  "description": "WebMCP-native browser agent - enables AI assistants to interact with web pages",
+  "description": "Expose this browser as a live, permissioned handle that agents control through a relay.",
   "permissions": [
     "activeTab",
     "tabs",
@@ -37,8 +37,5 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  },
-  "externally_connectable": {
-    "ids": ["*"]
   }
 }

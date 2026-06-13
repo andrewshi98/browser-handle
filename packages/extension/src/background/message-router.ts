@@ -4,6 +4,7 @@
 import type {
   BridgeRequest,
   BridgeMessage,
+  BridgeMethod,
   NavigateToParams,
   PageSnapshotParams,
   ClickParams,
@@ -28,6 +29,8 @@ import type {
 import { createResponse, createError, SIDE_PANEL_UPDATE_CHANNEL } from '@browserhandle/protocol';
 import type { TabManager } from './tab-manager';
 import type { DialogHandler } from './dialog-handler';
+import { AllowAllPolicyGate } from './policy-gate';
+import type { PolicyGate } from './policy-gate';
 
 /** Default timeout for waiting for tab load (30 seconds) */
 const TAB_LOAD_TIMEOUT_MS = 30_000;
@@ -39,8 +42,14 @@ const CONTENT_SCRIPT_TIMEOUT_MS = 8_000;
 
 export class MessageRouter {
   private dialogHandler?: DialogHandler;
+  private policyGate: PolicyGate = new AllowAllPolicyGate();
 
   constructor(private tabManager: TabManager) {}
+
+  /** Replace the policy gate (deferred-enforcement seam; default allows all) */
+  setPolicyGate(gate: PolicyGate): void {
+    this.policyGate = gate;
+  }
 
   /**
    * Send a message to the content script with a timeout.
@@ -86,6 +95,16 @@ export class MessageRouter {
     const { id, method, payload } = request;
 
     try {
+      // Deferred-enforcement seam: the default gate allows everything.
+      const decision = await this.policyGate.check({
+        method: method as BridgeMethod,
+        payload,
+        tabId: (payload as { tabId?: number })?.tabId,
+      });
+      if (!decision.allow) {
+        return createError(id, method, 'POLICY_DENIED', decision.reason ?? 'Action denied by policy');
+      }
+
       let result: unknown;
 
       switch (method) {

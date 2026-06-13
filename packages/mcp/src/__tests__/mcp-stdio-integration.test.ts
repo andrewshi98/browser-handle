@@ -113,7 +113,7 @@ describe('MCP Server stdio integration', () => {
     expect(initResponse.result.serverInfo.version).toBe(PKG_VERSION);
   }, 20000);
 
-  it('lists 21 tools via JSON-RPC after initialization', async () => {
+  it('lists 23 tools via JSON-RPC after initialization', async () => {
     child = await spawnAndWaitReady();
 
     const collector = createResponseCollector(child);
@@ -154,7 +154,7 @@ describe('MCP Server stdio integration', () => {
       (r: any) => r.id === 2 && r.result
     );
     expect(toolsResponse).toBeDefined();
-    expect(toolsResponse.result.tools).toHaveLength(21);
+    expect(toolsResponse.result.tools).toHaveLength(23);
 
     const toolNames = toolsResponse.result.tools
       .map((t: any) => t.name)
@@ -169,6 +169,7 @@ describe('MCP Server stdio integration', () => {
       'handle_dialog',
       'hover',
       'invoke_webmcp_tool',
+      'list_browser_handles',
       'list_tabs',
       'list_webmcp_tools',
       'navigate_to',
@@ -177,6 +178,7 @@ describe('MCP Server stdio integration', () => {
       'reload',
       'screenshot',
       'scroll_page',
+      'select_browser_handle',
       'select_option',
       'switch_tab',
       'type_text',

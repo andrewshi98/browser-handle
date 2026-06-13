@@ -1,23 +1,24 @@
 /**
  * BrowserHandle Chrome Extension Service Worker.
  *
- * Acts as the message hub between:
- * - WebSocket (MCP Server) ↔ Content Scripts (page interaction)
- * - Content Scripts ↔ Side Panel (activity logging)
+ * Hub between the relay (one outbound WebSocket) and the page (content
+ * scripts), plus the side panel (activity log + connection settings).
  */
 import {
-  WEBSOCKET_DEFAULT_PORT,
-  WEBSOCKET_PORT_RANGE_SIZE,
   KEEPALIVE_INTERVAL_MS,
   KEEPALIVE_ALARM,
   CONTENT_CHANNEL,
   SIDE_PANEL_PREFIX,
   SIDE_PANEL_UPDATE_CHANNEL,
+  STATUS_CHANNEL,
+  STATUS_REQUEST_CHANNEL,
 } from '@browserhandle/protocol';
-import { WebSocketBridge } from './ws-bridge';
 import { TabManager } from './tab-manager';
 import { MessageRouter } from './message-router';
 import { DialogHandler } from './dialog-handler';
+import { RelayConnection } from './relay-connection';
+import type { RelayConnectionStatus } from './relay-connection';
+import { loadConfig, getOrCreateHandleId, onConfigChanged } from './connection-config';
 
 // --- State ---
 const tabManager = new TabManager();
@@ -25,18 +26,24 @@ const messageRouter = new MessageRouter(tabManager);
 const dialogHandler = new DialogHandler();
 messageRouter.setDialogHandler(dialogHandler);
 
-const wsBridges: WebSocketBridge[] = [];
-for (let i = 0; i < WEBSOCKET_PORT_RANGE_SIZE; i++) {
-  wsBridges.push(
-    new WebSocketBridge(
-      `ws://127.0.0.1:${WEBSOCKET_DEFAULT_PORT + i}`,
-      messageRouter,
-    ),
-  );
-}
+let relayConnection: RelayConnection | null = null;
+let lastStatus: RelayConnectionStatus | null = null;
 
-/** Backward-compatible single bridge reference (first port) */
-const wsBridge = wsBridges[0];
+// --- Relay connection ---
+async function initRelay(): Promise<void> {
+  const [config, handleId] = await Promise.all([loadConfig(), getOrCreateHandleId()]);
+  relayConnection = new RelayConnection(config, handleId, messageRouter, (status) => {
+    lastStatus = status;
+    chrome.runtime.sendMessage({ channel: STATUS_CHANNEL, status }).catch(() => {
+      // Side panel may not be open.
+    });
+  });
+  relayConnection.start();
+
+  // Side panel edits chrome.storage.local directly; redial on changes.
+  onConfigChanged((cfg) => relayConnection?.updateConfig(cfg));
+}
+void initRelay();
 
 // --- Keepalive ---
 chrome.alarms.create(KEEPALIVE_ALARM, {
@@ -49,7 +56,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
-// --- Content Script Messages ---
+// --- Content Script & Side Panel Messages ---
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.channel === CONTENT_CHANNEL) {
     messageRouter.handleContentScriptMessage(message, sender, sendResponse);
@@ -57,11 +64,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.channel === SIDE_PANEL_PREFIX) {
-    // Forward to side panel
     broadcastToSidePanel(message);
     sendResponse({ ok: true });
     return false;
   }
+
+  if (message.channel === STATUS_REQUEST_CHANNEL) {
+    sendResponse({ status: lastStatus ?? relayConnection?.getStatus() ?? null });
+    return false;
+  }
+
+  return undefined;
 });
 
 // --- Side Panel ---
@@ -104,4 +117,4 @@ chrome.action?.onClicked?.addListener((tab) => {
 // --- Startup ---
 console.log('[BrowserHandle] Service Worker started');
 
-export { messageRouter, tabManager, wsBridge, wsBridges, broadcastToSidePanel };
+export { messageRouter, tabManager, broadcastToSidePanel };

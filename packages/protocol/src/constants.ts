@@ -23,6 +23,12 @@ export const SIDE_PANEL_PREFIX = 'browserhandle-sidepanel';
 /** chrome.runtime channel: service worker → side panel activity updates */
 export const SIDE_PANEL_UPDATE_CHANNEL = 'browserhandle-sidepanel-update';
 
+/** chrome.runtime channel: service worker → side panel relay connection status */
+export const STATUS_CHANNEL = 'browserhandle-status';
+
+/** chrome.runtime channel: side panel → service worker, request current status */
+export const STATUS_REQUEST_CHANNEL = 'browserhandle-status-request';
+
 /** Default WebSocket port for MCP ↔ Extension communication */
 export const WEBSOCKET_DEFAULT_PORT = 18080;
 

@@ -5,7 +5,7 @@
  */
 import { resolve } from 'node:path';
 import { platform, env } from 'node:process';
-import { WEBSOCKET_DEFAULT_PORT, WEBSOCKET_PORT_ENV } from '@browserhandle/protocol';
+import { DEFAULT_RELAY_URL } from './config.js';
 
 export async function install(): Promise<void> {
   console.log('BrowserHandle Installer');
@@ -13,7 +13,8 @@ export async function install(): Promise<void> {
 
   outputClaudeDesktopConfig();
 
-  console.log(`\nWebSocket port: ${WEBSOCKET_DEFAULT_PORT} (override with ${WEBSOCKET_PORT_ENV} env var)`);
+  console.log(`\nRelay URL: ${DEFAULT_RELAY_URL} (override with --relay-url or BROWSERHANDLE_RELAY_URL)`);
+  console.log('Start a relay with: npx @browserhandle/relay');
   console.log('\nInstallation complete!');
 }
 

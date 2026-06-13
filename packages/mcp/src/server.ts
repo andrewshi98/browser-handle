@@ -646,5 +646,62 @@ export function createBrowserHandleServer(options: { transport: BrowserTransport
     }
   );
 
+  // --- Tool: list_browser_handles ---
+  server.tool(
+    'list_browser_handles',
+    'List the browser handles registered on the relay. Each handle is one connected browser; '
+    + 'tool calls are routed to the currently bound handle.',
+    {},
+    async () => {
+      let handles;
+      try {
+        handles = await transport.listHandles();
+      } catch (err) {
+        return formatErrorResponse({
+          code: 'UNAUTHORIZED',
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+      if (handles.length === 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: 'No browser handles are registered. Open Chrome with the BrowserHandle extension '
+              + 'and confirm it shows "Connected" in the side panel.',
+          }],
+        };
+      }
+      const bound = transport.getBoundHandleId();
+      const lines = handles.map((h) => {
+        const marker = h.handleId === bound ? '* ' : '  ';
+        const state = h.connected ? 'connected' : 'disconnected';
+        return `${marker}${h.handleId} "${h.name}" [${state}] (last seen ${h.lastSeenAt})`;
+      });
+      return {
+        content: [{
+          type: 'text',
+          text: `${handles.length} handle(s) (* = bound to this session):\n${lines.join('\n')}`,
+        }],
+      };
+    }
+  );
+
+  // --- Tool: select_browser_handle ---
+  server.tool(
+    'select_browser_handle',
+    'Bind this session to a specific browser handle by id. Use list_browser_handles to see ids. '
+    + 'Resets the session tab so the next action opens a fresh tab on the selected browser.',
+    {
+      handleId: z.string().min(1).describe('The handle id to bind to (from list_browser_handles)'),
+    },
+    async ({ handleId }) => {
+      transport.selectHandle(handleId);
+      sessionTabId = null;
+      return {
+        content: [{ type: 'text', text: `Bound to browser handle ${handleId}.` }],
+      };
+    }
+  );
+
   return server;
 }

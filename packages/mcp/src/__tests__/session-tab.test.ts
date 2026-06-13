@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createBrowserHandleServer } from '../server.js';
-import type { WebSocketClient } from '../ws-client.js';
+import type { BrowserTransport } from '../transport.js';
 import type { BridgeMessage, BridgeMethod } from '@browserhandle/protocol';
 
 /** Create a method-aware mock WS client that tracks all calls */
@@ -52,9 +52,12 @@ function createMock() {
   const wsClient = {
     request: requestImpl,
     requestWithRetry: requestImpl,
-    isConnected: vi.fn(() => true),
-    close: vi.fn(async () => {}),
-  } as unknown as WebSocketClient;
+    listHandles: vi.fn(async () => [
+      { handleId: 'mock-handle', name: 'Mock', connected: true, connectedAt: '', lastSeenAt: '', protocolVersion: 1 },
+    ]),
+    getBoundHandleId: vi.fn(() => 'mock-handle'),
+    selectHandle: vi.fn(),
+  } as unknown as BrowserTransport;
 
   return { wsClient, calls, requestImpl };
 }
@@ -65,7 +68,7 @@ describe('Session tab auto-assignment', () => {
 
   beforeEach(async () => {
     mock = createMock();
-    const server = createBrowserHandleServer({ wsClient: mock.wsClient });
+    const server = createBrowserHandleServer({ transport: mock.wsClient });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     mcpClient = new Client({ name: 'session-tab-test', version: '0.0.1' });
     await server.connect(serverTransport);
