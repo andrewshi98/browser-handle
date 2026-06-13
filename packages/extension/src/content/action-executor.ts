@@ -1,0 +1,352 @@
+/**
+ * Action Executor - Performs DOM interactions on @ref-targeted elements.
+ * Handles both WebMCP invocation and DOM fallback operations.
+ */
+import { resolveRef } from './snapshot-engine';
+import { PAGE_BRIDGE_CHANNEL } from 'webclaw-shared';
+
+/** Check if an element is disabled (native :disabled or aria-disabled="true") */
+function isElementDisabled(el: HTMLElement): boolean {
+  if (el.matches(':disabled')) return true;
+  if (el.getAttribute('aria-disabled') === 'true') return true;
+  return false;
+}
+
+/** Click an element by @ref */
+export function clickElement(ref: string): { success: boolean; error?: string } {
+  const el = resolveRef(ref);
+  if (!el) {
+    return { success: false, error: `Element not found for ref ${ref}` };
+  }
+
+  // Support both HTMLElement and SVGElement (SVGs with role="button" etc.)
+  if (!(el instanceof HTMLElement) && !(el instanceof SVGElement)) {
+    return { success: false, error: `Element ${ref} is not a clickable element` };
+  }
+
+  if (el instanceof HTMLElement && isElementDisabled(el)) {
+    return { success: false, error: `Element ${ref} is disabled` };
+  }
+
+  // Check aria-disabled for non-HTML elements (e.g. SVG with role="button")
+  if (!(el instanceof HTMLElement) && el.getAttribute('aria-disabled') === 'true') {
+    return { success: false, error: `Element ${ref} is disabled` };
+  }
+
+  // Scroll into view
+  (el as HTMLElement).scrollIntoView?.({ behavior: 'instant', block: 'center' });
+
+  // Get element center coordinates for realistic mouse events
+  const rect = el.getBoundingClientRect();
+  const clientX = rect.left + rect.width / 2;
+  const clientY = rect.top + rect.height / 2;
+  const mouseOpts = { bubbles: true, cancelable: true, clientX, clientY };
+
+  // Dispatch click events (focus first, then mouse sequence)
+  if ('focus' in el && typeof el.focus === 'function') {
+    el.focus();
+    el.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
+  }
+  el.dispatchEvent(new MouseEvent('mousedown', mouseOpts));
+  el.dispatchEvent(new MouseEvent('mouseup', mouseOpts));
+  el.dispatchEvent(new MouseEvent('click', mouseOpts));
+
+  return { success: true };
+}
+
+/** Hover over an element by @ref to trigger mouseover/mouseenter events */
+export function hoverElement(ref: string): { success: boolean; error?: string } {
+  const el = resolveRef(ref);
+  if (!el) {
+    return { success: false, error: `Element not found for ref ${ref}` };
+  }
+
+  if (!(el instanceof HTMLElement) && !(el instanceof SVGElement)) {
+    return { success: false, error: `Element ${ref} is not a hoverable element` };
+  }
+
+  // Scroll into view
+  (el as HTMLElement).scrollIntoView?.({ behavior: 'instant', block: 'center' });
+
+  // Get element center coordinates for realistic mouse events
+  const rect = el.getBoundingClientRect();
+  const clientX = rect.left + rect.width / 2;
+  const clientY = rect.top + rect.height / 2;
+  const pointerOpts = { bubbles: true, cancelable: true, clientX, clientY };
+
+  // Dispatch hover event sequence
+  el.dispatchEvent(new PointerEvent('pointerover', pointerOpts));
+  el.dispatchEvent(new PointerEvent('pointerenter', { ...pointerOpts, bubbles: false }));
+  el.dispatchEvent(new MouseEvent('mouseover', pointerOpts));
+  el.dispatchEvent(new MouseEvent('mouseenter', { ...pointerOpts, bubbles: false }));
+  el.dispatchEvent(new PointerEvent('pointermove', pointerOpts));
+  el.dispatchEvent(new MouseEvent('mousemove', pointerOpts));
+
+  return { success: true };
+}
+
+/** Type text into an element by @ref */
+export function typeText(
+  ref: string,
+  text: string,
+  clearFirst = true
+): { success: boolean; error?: string } {
+  const el = resolveRef(ref);
+  if (!el) {
+    return { success: false, error: `Element not found for ref ${ref}` };
+  }
+
+  const ceAttr = el.getAttribute('contenteditable');
+  const isContentEditable = ceAttr !== null && ceAttr !== 'false';
+
+  if (
+    !(el instanceof HTMLInputElement) &&
+    !(el instanceof HTMLTextAreaElement) &&
+    !isContentEditable
+  ) {
+    return { success: false, error: `Element ${ref} is not a text input` };
+  }
+
+  if (el instanceof HTMLElement && isElementDisabled(el)) {
+    return { success: false, error: `Element ${ref} is disabled` };
+  }
+
+  el.scrollIntoView?.({ behavior: 'instant', block: 'center' });
+  (el as HTMLElement).focus();
+  el.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
+
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+    if (clearFirst) {
+      el.value = '';
+    }
+
+    // Use native input setter for React/Vue compatibility
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+      el instanceof HTMLTextAreaElement
+        ? HTMLTextAreaElement.prototype
+        : HTMLInputElement.prototype,
+      'value'
+    )?.set;
+
+    if (nativeInputValueSetter) {
+      nativeInputValueSetter.call(el, clearFirst ? text : el.value + text);
+    } else {
+      el.value = clearFirst ? text : el.value + text;
+    }
+
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  } else {
+    // contenteditable — use multiple strategies for rich-text editor compatibility
+    // (Prosemirror, Draft.js, Slate, etc.)
+    if (clearFirst) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      if (typeof document.execCommand === 'function') {
+        document.execCommand('delete');
+      } else {
+        el.textContent = '';
+      }
+    } else {
+      // Place cursor at end
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+    // Try execCommand first (works with most editors)
+    let inserted = false;
+    if (typeof document.execCommand === 'function') {
+      inserted = document.execCommand('insertText', false, text);
+    }
+    // Fallback: dispatch InputEvent with insertText type (Prosemirror, modern editors)
+    if (!inserted) {
+      el.dispatchEvent(new InputEvent('beforeinput', {
+        inputType: 'insertText',
+        data: text,
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      }));
+      // If editor didn't handle beforeinput, set textContent directly
+      if (!el.textContent?.includes(text)) {
+        el.textContent = (clearFirst ? '' : (el.textContent ?? '')) + text;
+      }
+      el.dispatchEvent(new InputEvent('input', {
+        inputType: 'insertText',
+        data: text,
+        bubbles: true,
+      }));
+    }
+  }
+
+  return { success: true };
+}
+
+/** Select an option by @ref and value */
+export function selectOption(
+  ref: string,
+  value: string
+): { success: boolean; error?: string } {
+  const el = resolveRef(ref);
+  if (!el) {
+    return { success: false, error: `Element not found for ref ${ref}` };
+  }
+
+  if (!(el instanceof HTMLSelectElement)) {
+    return { success: false, error: `Element ${ref} is not a select element` };
+  }
+
+  if (isElementDisabled(el)) {
+    return { success: false, error: `Element ${ref} is disabled` };
+  }
+
+  el.scrollIntoView?.({ behavior: 'instant', block: 'center' });
+  el.focus();
+
+  // Find option by value or text
+  let found = false;
+  for (const option of el.options) {
+    if (option.value === value || option.textContent?.trim() === value) {
+      // Check option's own disabled state and parent optgroup's disabled state
+      const optgroupDisabled =
+        option.parentElement instanceof HTMLOptGroupElement &&
+        option.parentElement.disabled;
+      if (option.disabled || optgroupDisabled) {
+        return {
+          success: false,
+          error: `Option "${value}" is disabled in select ${ref}`,
+        };
+      }
+      // For select[multiple], use option.selected to preserve existing selections.
+      // For single select, el.value is sufficient and deselects others as expected.
+      if (el.multiple) {
+        option.selected = true;
+      } else {
+        el.value = option.value;
+      }
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
+    return {
+      success: false,
+      error: `Option "${value}" not found in select ${ref}`,
+    };
+  }
+
+  el.dispatchEvent(new Event('change', { bubbles: true }));
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+
+  return { success: true };
+}
+
+/** Convert base64 string to a File object */
+function base64ToFile(name: string, mimeType: string, base64Data: string): File {
+  const byteString = atob(base64Data);
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new File([ab], name, { type: mimeType });
+}
+
+/** Drop files onto an element by @ref (file input or drag-and-drop target) */
+export function dropFiles(
+  ref: string,
+  files: Array<{ name: string; mimeType: string; base64Data: string }>
+): { success: boolean; error?: string } {
+  const el = resolveRef(ref);
+  if (!el) {
+    return { success: false, error: `Element not found for ref ${ref}` };
+  }
+
+  if (!(el instanceof HTMLElement)) {
+    return { success: false, error: `Element ${ref} is not an HTML element` };
+  }
+
+  const fileObjects = files.map((f) => base64ToFile(f.name, f.mimeType, f.base64Data));
+
+  // Strategy 1: <input type="file"> — set files via DataTransfer
+  if (el instanceof HTMLInputElement && el.type === 'file') {
+    const dt = new DataTransfer();
+    for (const file of fileObjects) {
+      dt.items.add(file);
+    }
+    el.files = dt.files;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    return { success: true };
+  }
+
+  // Strategy 2: Drag-and-drop event sequence
+  el.scrollIntoView?.({ behavior: 'instant', block: 'center' });
+  const rect = el.getBoundingClientRect();
+  const clientX = rect.left + rect.width / 2;
+  const clientY = rect.top + rect.height / 2;
+
+  const dt = new DataTransfer();
+  for (const file of fileObjects) {
+    dt.items.add(file);
+  }
+
+  const commonOpts = { bubbles: true, cancelable: true, clientX, clientY, dataTransfer: dt };
+
+  el.dispatchEvent(new DragEvent('dragenter', commonOpts));
+  el.dispatchEvent(new DragEvent('dragover', commonOpts));
+  el.dispatchEvent(new DragEvent('drop', commonOpts));
+  el.dispatchEvent(new DragEvent('dragleave', commonOpts));
+
+  return { success: true };
+}
+
+/** Invoke a WebMCP native tool via page context bridge */
+export async function invokeWebMCPTool(
+  toolName: string,
+  args: Record<string, unknown>
+): Promise<{ success: boolean; result?: unknown; error?: string }> {
+  return new Promise((resolve) => {
+    const timeoutId = setTimeout(() => {
+      window.removeEventListener('message', listener);
+      resolve({ success: false, error: 'WebMCP tool invocation timed out' });
+    }, 30_000);
+
+    const requestId = `invoke-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    const listener = (event: MessageEvent) => {
+      if (
+        event.source !== window ||
+        event.data?.channel !== PAGE_BRIDGE_CHANNEL ||
+        event.data?.type !== 'webmcp-invoke-result' ||
+        event.data?.requestId !== requestId
+      ) {
+        return;
+      }
+
+      window.removeEventListener('message', listener);
+      clearTimeout(timeoutId);
+      resolve(event.data.result);
+    };
+
+    window.addEventListener('message', listener);
+
+    window.postMessage(
+      {
+        channel: PAGE_BRIDGE_CHANNEL,
+        type: 'invoke-webmcp-tool',
+        requestId,
+        toolName,
+        args,
+      },
+      '*'
+    );
+  });
+}

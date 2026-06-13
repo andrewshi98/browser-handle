@@ -1,0 +1,26 @@
+{
+  "name": "@webclaw/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build && node scripts/post-build.js",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:unit": "vitest run --exclude 'src/__tests__/e2e/**'",
+    "test:e2e": "vitest run src/__tests__/e2e/",
+    "test:e2e:smoke": "vitest run src/__tests__/e2e/snapshot-actions-e2e.test.ts src/__tests__/e2e/error-handling-e2e.test.ts src/__tests__/e2e/content-script-injection.e2e.test.ts src/__tests__/e2e/complex-dom-e2e.test.ts src/__tests__/e2e/stale-refs-navigation-e2e.test.ts",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "webclaw-shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.300",
+    "jsdom": "^25.0.0",
+    "puppeteer-core": "^24.0.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.0"
+  }
+}

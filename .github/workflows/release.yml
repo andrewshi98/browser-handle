@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    name: Release & Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      # Extension zipをビルド
+      - name: Build extension zip
+        run: |
+          cd packages/extension/dist
+          zip -r ../../../webclaw-extension-${GITHUB_REF_NAME}.zip .
+
+      # リリースノートをコミットログから生成
+      - name: Generate release notes
+        run: |
+          PREV_TAG=$(git tag --sort=-v:refname | grep '^v' | sed -n '2p')
+          if [ -n "$PREV_TAG" ]; then
+            echo "## Changes" > release-notes.md
+            git log "${PREV_TAG}..HEAD" --pretty=format:"- %s" >> release-notes.md
+          else
+            echo "Initial release" > release-notes.md
+          fi
+
+      # GitHub Release作成 + zip添付
+      - name: Create GitHub Release
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            webclaw-extension-${GITHUB_REF_NAME}.zip \
+            --notes-file release-notes.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # npm publish
+      - name: Publish webclaw-shared
+        run: pnpm --filter webclaw-shared publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish webclaw-mcp
+        run: pnpm --filter webclaw-mcp publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

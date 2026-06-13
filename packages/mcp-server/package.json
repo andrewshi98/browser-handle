@@ -1,0 +1,56 @@
+{
+  "name": "webclaw-mcp",
+  "version": "0.10.0",
+  "description": "WebClaw MCP Server - WebMCP-native browser agent for Chrome",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kuroko1t/webclaw",
+    "directory": "packages/mcp-server"
+  },
+  "homepage": "https://github.com/kuroko1t/webclaw#readme",
+  "keywords": [
+    "webmcp",
+    "mcp",
+    "browser-agent",
+    "chrome-extension",
+    "ai-agent",
+    "claude",
+    "web-automation",
+    "model-context-protocol"
+  ],
+  "bin": {
+    "webclaw-mcp": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist .turbo",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "webclaw-shared": "workspace:*",
+    "ws": "^8.18.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

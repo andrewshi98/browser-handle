@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags-ignore: ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - run: pnpm exec turbo run test:unit
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Chrome for Testing
+        run: |
+          npx @puppeteer/browsers install chrome@stable --path /tmp/chrome-for-testing
+          CHROME_BIN=$(find /tmp/chrome-for-testing -name chrome -type f | head -1)
+          echo "CHROME_PATH=$CHROME_BIN" >> $GITHUB_ENV
+          $CHROME_BIN --version
+
+      - run: pnpm build
+
+      - name: Run E2E tests
+        run: pnpm --filter @webclaw/extension test:e2e
+        timeout-minutes: 15
