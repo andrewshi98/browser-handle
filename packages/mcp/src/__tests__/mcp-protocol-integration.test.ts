@@ -11,9 +11,9 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createWebClawServer } from '../server.js';
+import { createBrowserHandleServer } from '../server.js';
 import type { WebSocketClient } from '../ws-client.js';
-import type { BridgeMessage, BridgeMethod } from 'webclaw-shared';
+import type { BridgeMessage, BridgeMethod } from '@browserhandle/protocol';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_VERSION = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf8')).version;
@@ -83,7 +83,7 @@ describe('MCP Protocol integration (in-process)', () => {
   beforeAll(async () => {
     mockWs = createMockWsClient();
 
-    const server = createWebClawServer({ wsClient: mockWs.wsClient });
+    const server = createBrowserHandleServer({ wsClient: mockWs.wsClient });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 
     mcpClient = new Client({ name: 'test-client', version: '0.0.1' });
@@ -100,7 +100,7 @@ describe('MCP Protocol integration (in-process)', () => {
   it('completes initialize handshake and returns server info', () => {
     const serverVersion = mcpClient.getServerVersion();
     expect(serverVersion).toBeDefined();
-    expect(serverVersion!.name).toBe('webclaw');
+    expect(serverVersion!.name).toBe('browserhandle');
     expect(serverVersion!.version).toBe(PKG_VERSION);
   });
 

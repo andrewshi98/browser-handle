@@ -586,7 +586,7 @@ describe('MessageRouter', () => {
       expect(sendResponse).toHaveBeenCalledWith({ ok: true });
       expect(mockRuntimeSendMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          channel: 'webclaw-sidepanel-update',
+          channel: 'browserhandle-sidepanel-update',
           type: 'activity',
           tabId: 5,
         })

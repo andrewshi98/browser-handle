@@ -1,18 +1,18 @@
-# WebClaw
+# BrowserHandle
 
-[![CI](https://github.com/kuroko1t/webclaw/actions/workflows/ci.yml/badge.svg)](https://github.com/kuroko1t/webclaw/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/webclaw-mcp)](https://www.npmjs.com/package/webclaw-mcp)
+[![CI](https://github.com/andrewshi98/browser-handle/actions/workflows/ci.yml/badge.svg)](https://github.com/andrewshi98/browser-handle/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@browserhandle/mcp)](https://www.npmjs.com/package/@browserhandle/mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A **WebMCP-native** browser agent that runs inside your real Chrome — control it from Claude, Cursor, and any MCP client.
 
 <p align="center">
-  <img src="docs/images/demo.gif" alt="WebClaw demo" width="860">
+  <img src="docs/images/demo.gif" alt="BrowserHandle demo" width="860">
 </p>
 
-## Why WebClaw?
+## Why BrowserHandle?
 
-|  | WebClaw | browser-use | Playwright MCP |
+|  | BrowserHandle | browser-use | Playwright MCP |
 |---|---|---|---|
 | Runs in real Chrome | **Yes** (extension) | No (CDP) | No (Playwright) |
 | User's logged-in sessions | **Yes** | No | No |
@@ -20,7 +20,7 @@ A **WebMCP-native** browser agent that runs inside your real Chrome — control 
 | WebMCP native tools | **Yes** | No | No |
 | Page understanding | `@ref` a11y tree | Screenshots | DOM / Screenshots |
 
-WebClaw runs as a **Chrome extension**, so it sees exactly what you see — cookies, logins, extensions, and all. No headless browser, no CDP injection, no bot flags.
+BrowserHandle runs as a **Chrome extension**, so it sees exactly what you see — cookies, logins, extensions, and all. No headless browser, no CDP injection, no bot flags.
 
 ## Quick Start
 
@@ -34,9 +34,9 @@ Add to `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "webclaw": {
+    "browserhandle": {
       "command": "npx",
-      "args": ["-y", "webclaw-mcp"]
+      "args": ["-y", "@browserhandle/mcp"]
     }
   }
 }
@@ -53,7 +53,7 @@ Config file locations:
 <summary><b>Claude Code</b></summary>
 
 ```bash
-claude mcp add webclaw -- npx -y webclaw-mcp
+claude mcp add browserhandle -- npx -y @browserhandle/mcp
 ```
 
 </details>
@@ -66,9 +66,9 @@ Add to `.cursor/mcp.json` in your project root:
 ```json
 {
   "mcpServers": {
-    "webclaw": {
+    "browserhandle": {
       "command": "npx",
-      "args": ["-y", "webclaw-mcp"]
+      "args": ["-y", "@browserhandle/mcp"]
     }
   }
 }
@@ -84,10 +84,10 @@ Add to `.vscode/mcp.json` in your project root:
 ```json
 {
   "servers": {
-    "webclaw": {
+    "browserhandle": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "webclaw-mcp"]
+      "args": ["-y", "@browserhandle/mcp"]
     }
   }
 }
@@ -103,9 +103,9 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 ```json
 {
   "mcpServers": {
-    "webclaw": {
+    "browserhandle": {
       "command": "npx",
-      "args": ["-y", "webclaw-mcp"]
+      "args": ["-y", "@browserhandle/mcp"]
     }
   }
 }
@@ -115,7 +115,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ### 2. Load the Chrome extension
 
-1. Download the latest [`webclaw-extension.zip`](https://github.com/kuroko1t/webclaw/releases/latest) from the Releases page and unzip
+1. Download the latest [`browserhandle-extension.zip`](https://github.com/andrewshi98/browser-handle/releases/latest) from the Releases page and unzip
 2. Open `chrome://extensions/` → enable **Developer mode**
 3. Click **Load unpacked** → select the `dist/` folder
 
@@ -123,7 +123,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 <summary>Or build from source</summary>
 
 ```bash
-git clone https://github.com/kuroko1t/webclaw.git && cd webclaw && pnpm install && pnpm build
+git clone https://github.com/andrewshi98/browser-handle.git && cd browserhandle && pnpm install && pnpm build
 ```
 
 Then load `packages/extension/dist/` as above.
@@ -235,8 +235,8 @@ Every interactive element gets a stable `@ref` label. The AI reads the tree, pic
 ## Development
 
 ```bash
-git clone https://github.com/kuroko1t/webclaw.git
-cd webclaw
+git clone https://github.com/andrewshi98/browser-handle.git
+cd browserhandle
 pnpm install
 pnpm build        # Build all packages
 pnpm test         # Run all tests
@@ -256,13 +256,13 @@ examples/
 
 ### Multi-Session Support
 
-WebClaw automatically scans ports 18080–18089, so you can run up to **10 MCP server instances** simultaneously (e.g., multiple Claude Code sessions). Each instance binds to the first available port, and the Chrome extension connects to all of them.
+BrowserHandle automatically scans ports 18080–18089, so you can run up to **10 MCP server instances** simultaneously (e.g., multiple Claude Code sessions). Each instance binds to the first available port, and the Chrome extension connects to all of them.
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `WEBCLAW_PORT` | `18080` | WebSocket port for MCP server ↔ extension communication. When set, disables auto-scanning and uses only this port. |
+| `BROWSERHANDLE_PORT` | `18080` | WebSocket port for MCP server ↔ extension communication. When set, disables auto-scanning and uses only this port. |
 
 <details>
 <summary><b>Troubleshooting</b></summary>
@@ -273,8 +273,8 @@ WebClaw automatically scans ports 18080–18089, so you can run up to **10 MCP s
 - Verify the MCP server is running (look for `WebSocket server listening on 127.0.0.1:<port>` in stderr)
 
 **MCP client cannot connect**
-- Ensure `npx webclaw-mcp` runs successfully from your terminal
-- Check for port conflicts: WebClaw auto-scans 18080–18089. If all are in use, set `WEBCLAW_PORT` to a custom port
+- Ensure `npx @browserhandle/mcp` runs successfully from your terminal
+- Check for port conflicts: BrowserHandle auto-scans 18080–18089. If all are in use, set `BROWSERHANDLE_PORT` to a custom port
 - Restart your MCP client after updating the config
 
 **Content script not injecting**
@@ -293,7 +293,7 @@ Contributions are welcome! Please open an issue to discuss your idea before subm
 
 ## Disclaimer
 
-WebClaw is a browser automation tool intended for legitimate use cases such as personal productivity, development, testing, and accessibility. Users are responsible for complying with the terms of service of any website they interact with. The authors are not responsible for any misuse of this tool.
+BrowserHandle is a browser automation tool intended for legitimate use cases such as personal productivity, development, testing, and accessibility. Users are responsible for complying with the terms of service of any website they interact with. The authors are not responsible for any misuse of this tool.
 
 ## License
 

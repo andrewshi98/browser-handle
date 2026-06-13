@@ -1,5 +1,5 @@
 /**
- * WebClaw Chrome Extension Service Worker.
+ * BrowserHandle Chrome Extension Service Worker.
  *
  * Acts as the message hub between:
  * - WebSocket (MCP Server) ↔ Content Scripts (page interaction)
@@ -9,7 +9,11 @@ import {
   WEBSOCKET_DEFAULT_PORT,
   WEBSOCKET_PORT_RANGE_SIZE,
   KEEPALIVE_INTERVAL_MS,
-} from 'webclaw-shared';
+  KEEPALIVE_ALARM,
+  CONTENT_CHANNEL,
+  SIDE_PANEL_PREFIX,
+  SIDE_PANEL_UPDATE_CHANNEL,
+} from '@browserhandle/protocol';
 import { WebSocketBridge } from './ws-bridge';
 import { TabManager } from './tab-manager';
 import { MessageRouter } from './message-router';
@@ -35,11 +39,11 @@ for (let i = 0; i < WEBSOCKET_PORT_RANGE_SIZE; i++) {
 const wsBridge = wsBridges[0];
 
 // --- Keepalive ---
-chrome.alarms.create('webclaw-keepalive', {
+chrome.alarms.create(KEEPALIVE_ALARM, {
   periodInMinutes: KEEPALIVE_INTERVAL_MS / 60_000,
 });
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'webclaw-keepalive') {
+  if (alarm.name === KEEPALIVE_ALARM) {
     // Keep service worker alive by performing a trivial operation
     void chrome.storage.session.get('keepalive');
   }
@@ -47,12 +51,12 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 // --- Content Script Messages ---
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.channel === 'webclaw-content') {
+  if (message.channel === CONTENT_CHANNEL) {
     messageRouter.handleContentScriptMessage(message, sender, sendResponse);
     return true; // Keep channel open for async response
   }
 
-  if (message.channel === 'webclaw-sidepanel') {
+  if (message.channel === SIDE_PANEL_PREFIX) {
     // Forward to side panel
     broadcastToSidePanel(message);
     sendResponse({ ok: true });
@@ -62,7 +66,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // --- Side Panel ---
 function broadcastToSidePanel(message: unknown): void {
-  chrome.runtime.sendMessage({ channel: 'webclaw-sidepanel-update', ...message as object }).catch(() => {
+  chrome.runtime.sendMessage({ channel: SIDE_PANEL_UPDATE_CHANNEL, ...message as object }).catch(() => {
     // Side panel may not be open
   });
 }
@@ -98,6 +102,6 @@ chrome.action?.onClicked?.addListener((tab) => {
 });
 
 // --- Startup ---
-console.log('[WebClaw] Service Worker started');
+console.log('[BrowserHandle] Service Worker started');
 
 export { messageRouter, tabManager, wsBridge, wsBridges, broadcastToSidePanel };

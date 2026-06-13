@@ -103,14 +103,14 @@ describe('Page Bridge E2E', () => {
     // Wait for page-bridge.js to execute
     await new Promise((r) => setTimeout(r, 1000));
 
-    // The page-bridge.js listens for 'webclaw-page-bridge' channel messages in MAIN world.
+    // The page-bridge.js listens for 'browserhandle-page-bridge' channel messages in MAIN world.
     // Send a discovery request and verify we get a response (empty tools since no WebMCP on test page).
     const response = await page.evaluate(() => {
       return new Promise<{ tools: unknown[] }>((resolve) => {
         const timeout = setTimeout(() => resolve({ tools: [] }), 3000);
         window.addEventListener('message', function handler(event) {
           if (
-            event.data?.channel === 'webclaw-page-bridge' &&
+            event.data?.channel === 'browserhandle-page-bridge' &&
             event.data?.type === 'webmcp-tools-result'
           ) {
             window.removeEventListener('message', handler);
@@ -119,7 +119,7 @@ describe('Page Bridge E2E', () => {
           }
         });
         window.postMessage(
-          { channel: 'webclaw-page-bridge', type: 'discover-webmcp-tools' },
+          { channel: 'browserhandle-page-bridge', type: 'discover-webmcp-tools' },
           '*',
         );
       });

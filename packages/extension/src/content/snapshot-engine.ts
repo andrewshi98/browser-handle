@@ -5,8 +5,8 @@
  * for interactive elements. Designed for minimal token usage while preserving
  * structural context for LLM-based navigation.
  */
-import { createRefCounter } from 'webclaw-shared';
-import type { SnapshotNode, SnapshotOptions } from 'webclaw-shared';
+import { createRefCounter } from '@browserhandle/protocol';
+import type { SnapshotNode, SnapshotOptions } from '@browserhandle/protocol';
 
 /** Map of @ref → DOM element for the current snapshot */
 let refMap = new Map<string, Element>();

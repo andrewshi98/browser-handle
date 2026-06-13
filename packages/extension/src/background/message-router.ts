@@ -24,8 +24,8 @@ import type {
   DropFilesParams,
   HandleDialogParams,
   EvaluateParams,
-} from 'webclaw-shared';
-import { createResponse, createError } from 'webclaw-shared';
+} from '@browserhandle/protocol';
+import { createResponse, createError, SIDE_PANEL_UPDATE_CHANNEL } from '@browserhandle/protocol';
 import type { TabManager } from './tab-manager';
 import type { DialogHandler } from './dialog-handler';
 
@@ -200,7 +200,7 @@ export class MessageRouter {
     switch (message.action) {
       case 'log':
         chrome.runtime.sendMessage({
-          channel: 'webclaw-sidepanel-update',
+          channel: SIDE_PANEL_UPDATE_CHANNEL,
           type: 'activity',
           data: message.data,
           tabId,

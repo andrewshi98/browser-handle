@@ -52,5 +52,5 @@ jobs:
       - run: pnpm build
 
       - name: Run E2E tests
-        run: pnpm --filter @webclaw/extension test:e2e
+        run: pnpm --filter @browserhandle/extension test:e2e
         timeout-minutes: 15

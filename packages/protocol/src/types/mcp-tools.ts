@@ -1,5 +1,5 @@
 /**
- * MCP tool definitions for the WebClaw server.
+ * MCP tool definitions for the BrowserHandle server.
  */
 
 /** Parameters for navigate_to tool */

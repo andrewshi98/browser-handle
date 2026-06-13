@@ -1,5 +1,5 @@
 /**
- * WebClaw Content Script.
+ * BrowserHandle Content Script.
  *
  * Injected into every page. Handles:
  * - Snapshot generation (@ref A11y tree)
@@ -7,6 +7,7 @@
  * - WebMCP discovery and invocation
  * - Communication with Service Worker
  */
+import { ACTION_CHANNEL, CONTENT_CHANNEL } from '@browserhandle/protocol';
 import { takeSnapshot, resolveRef } from './snapshot-engine';
 import { clickElement, hoverElement, typeText, selectOption, dropFiles, invokeWebMCPTool } from './action-executor';
 import { discoverWebMCPTools, getCachedTools, invokeSynthesizedTool } from './webmcp-discovery';
@@ -16,7 +17,7 @@ injectPageBridge();
 
 // Listen for messages from Service Worker
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.channel !== 'webclaw-action') return false;
+  if (message.channel !== ACTION_CHANNEL) return false;
   handleAction(message).then(sendResponse).catch((err) => {
     sendResponse({ error: err instanceof Error ? err.message : String(err) });
   });
@@ -82,7 +83,7 @@ async function handleAction(message: {
 
     case 'listWebMCPTools': {
       const tabId = (await chrome.runtime.sendMessage({
-        channel: 'webclaw-content',
+        channel: CONTENT_CHANNEL,
         action: 'getTabId',
       })) as number | undefined;
       const tools = await discoverWebMCPTools(tabId ?? 0);
@@ -150,7 +151,7 @@ function injectPageBridge(): void {
 /** Send activity log to Service Worker for Side Panel display */
 function logActivity(action: string, data: Record<string, unknown>): void {
   chrome.runtime.sendMessage({
-    channel: 'webclaw-content',
+    channel: CONTENT_CHANNEL,
     action: 'log',
     data: {
       action,

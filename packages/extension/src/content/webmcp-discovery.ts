@@ -4,8 +4,8 @@
  * 1. Native: Probes `navigator.modelContext` for WebMCP tool declarations
  * 2. Synthesis: Generates tool declarations from forms, buttons, inputs
  */
-import type { WebMCPTool, JSONSchema } from 'webclaw-shared';
-import { PAGE_BRIDGE_CHANNEL } from 'webclaw-shared';
+import type { WebMCPTool, JSONSchema } from '@browserhandle/protocol';
+import { PAGE_BRIDGE_CHANNEL } from '@browserhandle/protocol';
 
 /** Discovered tools cache */
 let discoveredTools: WebMCPTool[] = [];
@@ -246,7 +246,7 @@ function synthesizeButtonTool(
     inputSchema: { type: 'object', properties: {} },
     source: 'synthesized-button',
     tabId,
-    elementRef: button.getAttribute('data-webclaw-ref') ?? undefined,
+    elementRef: button.getAttribute('data-browserhandle-ref') ?? undefined,
   };
 }
 

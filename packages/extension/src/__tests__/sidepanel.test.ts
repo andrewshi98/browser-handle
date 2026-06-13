@@ -38,10 +38,10 @@ describe('sidepanel', () => {
     expect(messageListeners.length).toBeGreaterThan(0);
   });
 
-  it('adds log entry on webclaw-sidepanel-update activity message', () => {
+  it('adds log entry on browserhandle-sidepanel-update activity message', () => {
     const listener = messageListeners[0];
     listener({
-      channel: 'webclaw-sidepanel-update',
+      channel: 'browserhandle-sidepanel-update',
       type: 'activity',
       data: {
         action: 'click',
@@ -78,7 +78,7 @@ describe('sidepanel', () => {
     expect(emptyState.style.display).toBe('flex');
 
     listener({
-      channel: 'webclaw-sidepanel-update',
+      channel: 'browserhandle-sidepanel-update',
       type: 'activity',
       data: { action: 'snapshot', timestamp: Date.now() },
     });
@@ -92,7 +92,7 @@ describe('sidepanel', () => {
     expect(statusEl.textContent).toBe('Idle');
 
     listener({
-      channel: 'webclaw-sidepanel-update',
+      channel: 'browserhandle-sidepanel-update',
       type: 'activity',
       data: { action: 'snapshot', timestamp: Date.now() },
     });
@@ -104,7 +104,7 @@ describe('sidepanel', () => {
   it('clear button removes all entries', () => {
     const listener = messageListeners[0];
     listener({
-      channel: 'webclaw-sidepanel-update',
+      channel: 'browserhandle-sidepanel-update',
       type: 'activity',
       data: { action: 'click', timestamp: Date.now() },
     });
@@ -123,7 +123,7 @@ describe('sidepanel', () => {
   it('prevents XSS through action name', () => {
     const listener = messageListeners[0];
     listener({
-      channel: 'webclaw-sidepanel-update',
+      channel: 'browserhandle-sidepanel-update',
       type: 'activity',
       data: {
         action: '<img src=x onerror=alert(1)>',
@@ -142,7 +142,7 @@ describe('sidepanel', () => {
   it('prevents XSS through detail values', () => {
     const listener = messageListeners[0];
     listener({
-      channel: 'webclaw-sidepanel-update',
+      channel: 'browserhandle-sidepanel-update',
       type: 'activity',
       data: {
         action: 'click',
@@ -161,7 +161,7 @@ describe('sidepanel', () => {
     const listener = messageListeners[0];
     for (let i = 0; i < 5; i++) {
       listener({
-        channel: 'webclaw-sidepanel-update',
+        channel: 'browserhandle-sidepanel-update',
         type: 'activity',
         data: { action: `action-${i}`, timestamp: Date.now() + i },
       });
@@ -175,7 +175,7 @@ describe('sidepanel', () => {
   it('excludes url from details display', () => {
     const listener = messageListeners[0];
     listener({
-      channel: 'webclaw-sidepanel-update',
+      channel: 'browserhandle-sidepanel-update',
       type: 'activity',
       data: {
         action: 'snapshot',

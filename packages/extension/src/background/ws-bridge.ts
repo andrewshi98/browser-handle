@@ -4,7 +4,7 @@
  * Connects to the MCP server's WebSocket endpoint and routes
  * incoming requests through the MessageRouter.
  */
-import type { BridgeMessage, BridgeRequest } from 'webclaw-shared';
+import type { BridgeMessage, BridgeRequest } from '@browserhandle/protocol';
 import type { MessageRouter } from './message-router';
 
 const RECONNECT_INTERVAL_MS = 3_000;
@@ -31,7 +31,7 @@ export class WebSocketBridge {
 
       this.ws.addEventListener('open', () => {
         this.hasConnectedOnce = true;
-        console.log(`[WebClaw Bridge] Connected to MCP server (${this.url})`);
+        console.log(`[BrowserHandle Bridge] Connected to MCP server (${this.url})`);
       });
 
       this.ws.addEventListener('message', (event) => {
@@ -40,7 +40,7 @@ export class WebSocketBridge {
 
       this.ws.addEventListener('close', () => {
         if (this.hasConnectedOnce) {
-          console.log(`[WebClaw Bridge] Disconnected from MCP server (${this.url})`);
+          console.log(`[BrowserHandle Bridge] Disconnected from MCP server (${this.url})`);
         }
         this.ws = null;
         this.scheduleReconnect();
@@ -70,11 +70,11 @@ export class WebSocketBridge {
 
       const request = message as BridgeRequest;
       if (!request.id || !request.method) {
-        console.error('[WebClaw Bridge] Invalid message:', message);
+        console.error('[BrowserHandle Bridge] Invalid message:', message);
         return;
       }
 
-      console.log(`[WebClaw Bridge] Request: ${request.method}`, request.id);
+      console.log(`[BrowserHandle Bridge] Request: ${request.method}`, request.id);
 
       // Send ACK immediately
       this.send({
@@ -89,7 +89,7 @@ export class WebSocketBridge {
       const response = await this.router.handleBridgeRequest(request);
       this.send(response);
     } catch (err) {
-      console.error('[WebClaw Bridge] Error handling message:', err);
+      console.error('[BrowserHandle Bridge] Error handling message:', err);
       try {
         const msg = typeof data === 'string' ? JSON.parse(data) : {} as { id?: string; method?: string };
         this.send({
@@ -110,13 +110,13 @@ export class WebSocketBridge {
 
   send(message: BridgeMessage): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.warn('[WebClaw Bridge] Cannot send, not connected');
+      console.warn('[BrowserHandle Bridge] Cannot send, not connected');
       return;
     }
     try {
       this.ws.send(JSON.stringify(message));
     } catch (err) {
-      console.error('[WebClaw Bridge] Send error:', err);
+      console.error('[BrowserHandle Bridge] Send error:', err);
     }
   }
 

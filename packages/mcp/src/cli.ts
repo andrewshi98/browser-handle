@@ -1,30 +1,30 @@
 #!/usr/bin/env node
 /**
- * WebClaw CLI entry point.
+ * BrowserHandle CLI entry point.
  *
  * Usage:
- *   npx webclaw-mcp          - Start the MCP server (stdio transport + WebSocket)
- *   npx webclaw-mcp install  - Output Claude Desktop config
- *   npx webclaw-mcp --help   - Show usage information
+ *   npx @browserhandle/mcp          - Start the MCP server (stdio transport + WebSocket)
+ *   npx @browserhandle/mcp install  - Output Claude Desktop config
+ *   npx @browserhandle/mcp --help   - Show usage information
  */
-import { createWebClawServer } from './server.js';
+import { createBrowserHandleServer } from './server.js';
 import { WebSocketClient } from './ws-client.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { install } from './installer.js';
-import { WEBSOCKET_DEFAULT_PORT, WEBSOCKET_PORT_ENV, WEBSOCKET_PORT_RANGE_SIZE } from 'webclaw-shared';
+import { WEBSOCKET_DEFAULT_PORT, WEBSOCKET_PORT_ENV, WEBSOCKET_PORT_RANGE_SIZE } from '@browserhandle/protocol';
 
 const args = process.argv.slice(2);
 
 if (args.includes('--help') || args.includes('-h')) {
-  console.log(`webclaw-mcp - WebMCP-native browser agent
+  console.log(`@browserhandle/mcp - WebMCP-native browser agent
 
 Usage:
-  npx webclaw-mcp              Start the MCP server (stdio + WebSocket)
-  npx webclaw-mcp install      Output Claude Desktop config
-  npx webclaw-mcp --help       Show this help message
+  npx @browserhandle/mcp              Start the MCP server (stdio + WebSocket)
+  npx @browserhandle/mcp install      Output Claude Desktop config
+  npx @browserhandle/mcp --help       Show this help message
 
 Description:
-  WebClaw enables AI assistants like Claude to interact with web pages
+  BrowserHandle enables AI assistants like Claude to interact with web pages
   through a Chrome extension and MCP protocol. The MCP server communicates
   with the Chrome extension via a localhost WebSocket connection.
 
@@ -34,11 +34,11 @@ Environment variables:
 Claude Desktop config:
   {
     "mcpServers": {
-      "webclaw": { "command": "npx", "args": ["-y", "webclaw-mcp"] }
+      "browserhandle": { "command": "npx", "args": ["-y", "@browserhandle/mcp"] }
     }
   }
 
-More info: https://github.com/kuroko1t/webclaw`);
+More info: https://github.com/andrewshi98/browser-handle`);
   process.exit(0);
 } else if (args[0] === 'install') {
   await install();
@@ -55,18 +55,18 @@ More info: https://github.com/kuroko1t/webclaw`);
       const error = err as NodeJS.ErrnoException;
       if (error.code === 'EADDRINUSE') {
         console.error(
-          `[WebClaw] Port ${explicitPort} is already in use.\n` +
-            `  Another WebClaw instance may be running. To fix:\n` +
+          `[BrowserHandle] Port ${explicitPort} is already in use.\n` +
+            `  Another BrowserHandle instance may be running. To fix:\n` +
             `    lsof -ti:${explicitPort} | xargs kill\n` +
             `  Or use a different port:\n` +
-            `    ${WEBSOCKET_PORT_ENV}=${explicitPort + 1} npx webclaw-mcp`,
+            `    ${WEBSOCKET_PORT_ENV}=${explicitPort + 1} npx @browserhandle/mcp`,
         );
       } else {
-        console.error(`[WebClaw] WebSocket server error: ${error.message}`);
+        console.error(`[BrowserHandle] WebSocket server error: ${error.message}`);
       }
       process.exit(1);
     }
-    console.error(`[WebClaw] WebSocket server listening on 127.0.0.1:${explicitPort}`);
+    console.error(`[BrowserHandle] WebSocket server listening on 127.0.0.1:${explicitPort}`);
   } else {
     // Auto-scan port range
     let boundPort: number | null = null;
@@ -82,30 +82,30 @@ More info: https://github.com/kuroko1t/webclaw`);
         if (error.code === 'EADDRINUSE') {
           continue;
         }
-        console.error(`[WebClaw] WebSocket server error: ${error.message}`);
+        console.error(`[BrowserHandle] WebSocket server error: ${error.message}`);
         process.exit(1);
       }
     }
     if (boundPort === null) {
       console.error(
-        `[WebClaw] All ports in range ${WEBSOCKET_DEFAULT_PORT}–${WEBSOCKET_DEFAULT_PORT + WEBSOCKET_PORT_RANGE_SIZE - 1} are in use.\n` +
-          `  ${WEBSOCKET_PORT_RANGE_SIZE} WebClaw instances may already be running.`,
+        `[BrowserHandle] All ports in range ${WEBSOCKET_DEFAULT_PORT}–${WEBSOCKET_DEFAULT_PORT + WEBSOCKET_PORT_RANGE_SIZE - 1} are in use.\n` +
+          `  ${WEBSOCKET_PORT_RANGE_SIZE} BrowserHandle instances may already be running.`,
       );
       process.exit(1);
     }
-    console.error(`[WebClaw] WebSocket server listening on 127.0.0.1:${boundPort}`);
+    console.error(`[BrowserHandle] WebSocket server listening on 127.0.0.1:${boundPort}`);
   }
 
   const cleanup = async () => {
-    console.error('[WebClaw] Shutting down...');
+    console.error('[BrowserHandle] Shutting down...');
     await wsClient.close();
     process.exit(0);
   };
   process.on('SIGTERM', cleanup);
   process.on('SIGINT', cleanup);
 
-  const server = createWebClawServer({ wsClient });
+  const server = createBrowserHandleServer({ wsClient });
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error(`[WebClaw] MCP Server started (stdio transport)`);
+  console.error(`[BrowserHandle] MCP Server started (stdio transport)`);
 }

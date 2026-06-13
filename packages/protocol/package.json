@@ -1,14 +1,15 @@
 {
-  "name": "webclaw-shared",
-  "version": "0.8.0",
+  "name": "@browserhandle/protocol",
+  "version": "0.1.0",
+  "description": "BrowserHandle wire protocol - shared types, schemas, and constants",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kuroko1t/webclaw",
-    "directory": "packages/shared"
+    "url": "https://github.com/andrewshi98/browser-handle",
+    "directory": "packages/protocol"
   },
-  "homepage": "https://github.com/kuroko1t/webclaw#readme",
+  "homepage": "https://github.com/andrewshi98/browser-handle#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

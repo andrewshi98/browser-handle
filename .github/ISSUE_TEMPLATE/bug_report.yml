@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in WebClaw
+description: Report a bug in BrowserHandle
 labels: ["bug"]
 body:
   - type: textarea

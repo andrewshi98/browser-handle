@@ -93,7 +93,7 @@ describe('WebSocketClient.ensureConnected()', () => {
     mockLaunchChrome.mockResolvedValue(true);
 
     await expect(wsClient.ensureConnected(500)).rejects.toThrow(
-      'WebClaw extension did not connect'
+      'BrowserHandle extension did not connect'
     );
   });
 

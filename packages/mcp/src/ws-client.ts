@@ -10,13 +10,13 @@
  */
 import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage } from 'http';
-import type { BridgeMessage, BridgeMethod } from 'webclaw-shared';
-import { createRequest, isBridgeMessage } from 'webclaw-shared';
+import type { BridgeMessage, BridgeMethod } from '@browserhandle/protocol';
+import { createRequest, isBridgeMessage } from '@browserhandle/protocol';
 import {
   OPERATION_TIMEOUTS,
   MAX_RETRY_ATTEMPTS,
   RETRY_BASE_DELAY_MS,
-} from 'webclaw-shared';
+} from '@browserhandle/protocol';
 import { launchChrome } from './chrome-launcher.js';
 
 interface PendingRequest {
@@ -102,7 +102,7 @@ export class WebSocketClient {
     this.wss = wss;
 
     this.wss.on('error', (err) => {
-      console.error('[WebClaw WS] Server error:', err.message);
+      console.error('[BrowserHandle WS] Server error:', err.message);
     });
 
     this.wss.on('connection', (ws) => {
@@ -111,21 +111,21 @@ export class WebSocketClient {
         this.connection.close();
       }
       this.connection = ws;
-      console.error(`[WebClaw] Extension connected`);
+      console.error(`[BrowserHandle] Extension connected`);
 
       ws.on('message', (data) => {
         try {
           const message = JSON.parse(data.toString());
           this.handleMessage(message);
         } catch (err) {
-          console.error('[WebClaw WS] Failed to parse message:', err);
+          console.error('[BrowserHandle WS] Failed to parse message:', err);
         }
       });
 
       ws.on('close', () => {
         if (this.connection === ws) {
           this.connection = null;
-          console.error('[WebClaw] Extension disconnected');
+          console.error('[BrowserHandle] Extension disconnected');
 
           // Reject all pending requests with CONNECTION_LOST
           for (const [id, pending] of this.pendingRequests) {
@@ -137,7 +137,7 @@ export class WebSocketClient {
       });
 
       ws.on('error', (err) => {
-        console.error('[WebClaw WS] Connection error:', err.message);
+        console.error('[BrowserHandle WS] Connection error:', err.message);
       });
     });
   }
@@ -154,7 +154,7 @@ export class WebSocketClient {
 
   private handleMessage(message: unknown): void {
     if (!isBridgeMessage(message)) {
-      console.error('[WebClaw WS] Invalid message format:', message);
+      console.error('[BrowserHandle WS] Invalid message format:', message);
       return;
     }
 
@@ -197,18 +197,18 @@ export class WebSocketClient {
 
   private async _doEnsureConnected(timeoutMs: number): Promise<void> {
     if (!this.chromeLaunched) {
-      console.error('[WebClaw] Chrome extension not connected. Launching Chrome...');
+      console.error('[BrowserHandle] Chrome extension not connected. Launching Chrome...');
       const launched = await launchChrome();
       if (!launched) {
         throw new Error(
           'Could not launch Chrome automatically.\n' +
-          'Please start Chrome manually with the WebClaw extension installed.'
+          'Please start Chrome manually with the BrowserHandle extension installed.'
         );
       }
       this.chromeLaunched = true;
-      console.error('[WebClaw] Chrome launched. Waiting for extension to connect...');
+      console.error('[BrowserHandle] Chrome launched. Waiting for extension to connect...');
     } else {
-      console.error('[WebClaw] Waiting for Chrome extension to reconnect...');
+      console.error('[BrowserHandle] Waiting for Chrome extension to reconnect...');
     }
 
     // Wait for extension to connect via WebSocket
@@ -223,8 +223,8 @@ export class WebSocketClient {
         this.wss.removeListener('connection', onConnection);
 
         reject(new Error(
-          'Chrome was launched but the WebClaw extension did not connect.\n' +
-          'Please ensure the WebClaw extension is installed and enabled:\n' +
+          'Chrome was launched but the BrowserHandle extension did not connect.\n' +
+          'Please ensure the BrowserHandle extension is installed and enabled:\n' +
           '  1. Open chrome://extensions/\n' +
           '  2. Enable Developer mode\n' +
           '  3. Click "Load unpacked" and select the extension dist/ folder\n' +
@@ -298,7 +298,7 @@ export class WebSocketClient {
         // Exponential backoff: 500ms, 1000ms
         const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
         console.error(
-          `[WebClaw] Request ${method} failed (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS + 1}): ${lastError.message}. Retrying in ${delay}ms...`
+          `[BrowserHandle] Request ${method} failed (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS + 1}): ${lastError.message}. Retrying in ${delay}ms...`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
       }

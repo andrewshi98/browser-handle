@@ -56,7 +56,7 @@ function spawnAndWaitReady(): Promise<ChildProcess> {
   const proc = spawn('node', [cliPath], {
     stdio: ['pipe', 'pipe', 'pipe'],
     timeout: 15000,
-    env: { ...process.env, WEBCLAW_PORT: String(port) },
+    env: { ...process.env, BROWSERHANDLE_PORT: String(port) },
   });
 
   return new Promise((resolve, reject) => {
@@ -109,7 +109,7 @@ describe('MCP Server stdio integration', () => {
       (r: any) => r.id === 1 && r.result
     ) as any;
     expect(initResponse).toBeDefined();
-    expect(initResponse.result.serverInfo.name).toBe('webclaw');
+    expect(initResponse.result.serverInfo.name).toBe('browserhandle');
     expect(initResponse.result.serverInfo.version).toBe(PKG_VERSION);
   }, 20000);
 

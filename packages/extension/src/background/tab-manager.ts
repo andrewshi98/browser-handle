@@ -1,6 +1,7 @@
 /**
  * Manages tab state and content script injection.
  */
+import { ACTION_CHANNEL } from '@browserhandle/protocol';
 
 interface TabState {
   id: number;
@@ -34,7 +35,7 @@ export class TabManager {
   ): Promise<T> {
     await this.ensureContentScript(tabId);
     return chrome.tabs.sendMessage(tabId, {
-      channel: 'webclaw-action',
+      channel: ACTION_CHANNEL,
       ...message,
     }) as Promise<T>;
   }
@@ -62,7 +63,7 @@ export class TabManager {
     try {
       // Try sending a ping first
       await chrome.tabs.sendMessage(tabId, {
-        channel: 'webclaw-action',
+        channel: ACTION_CHANNEL,
         action: 'ping',
       });
     } catch {

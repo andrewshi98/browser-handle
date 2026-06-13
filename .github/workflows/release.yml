@@ -28,7 +28,7 @@ jobs:
       - name: Build extension zip
         run: |
           cd packages/extension/dist
-          zip -r ../../../webclaw-extension-${GITHUB_REF_NAME}.zip .
+          zip -r ../../../browserhandle-extension-${GITHUB_REF_NAME}.zip .
 
       # リリースノートをコミットログから生成
       - name: Generate release notes
@@ -45,18 +45,18 @@ jobs:
       - name: Create GitHub Release
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            webclaw-extension-${GITHUB_REF_NAME}.zip \
+            browserhandle-extension-${GITHUB_REF_NAME}.zip \
             --notes-file release-notes.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # npm publish
-      - name: Publish webclaw-shared
-        run: pnpm --filter webclaw-shared publish --no-git-checks --access public
+      - name: Publish @browserhandle/protocol
+        run: pnpm --filter @browserhandle/protocol publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish webclaw-mcp
-        run: pnpm --filter webclaw-mcp publish --no-git-checks --access public
+      - name: Publish @browserhandle/mcp
+        run: pnpm --filter @browserhandle/mcp publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

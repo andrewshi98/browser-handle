@@ -1,5 +1,5 @@
 /**
- * Error codes and recovery messages for WebClaw.
+ * Error codes and recovery messages for BrowserHandle.
  */
 
 /** Standard error codes used across the bridge protocol */

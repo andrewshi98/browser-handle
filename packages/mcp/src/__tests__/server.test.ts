@@ -3,8 +3,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 /**
  * Tests for MCP server tool registration.
- * Since createWebClawServer() creates a NativeMessagingClient that attaches
- * to process.stdin, we test tool registration patterns independently.
+ * Since createBrowserHandleServer() requires a connected browser client,
+ * we test tool registration patterns independently.
  */
 describe('MCP Server tool registration', () => {
   it('McpServer can be instantiated', () => {

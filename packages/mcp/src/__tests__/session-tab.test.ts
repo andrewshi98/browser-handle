@@ -8,9 +8,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { createWebClawServer } from '../server.js';
+import { createBrowserHandleServer } from '../server.js';
 import type { WebSocketClient } from '../ws-client.js';
-import type { BridgeMessage, BridgeMethod } from 'webclaw-shared';
+import type { BridgeMessage, BridgeMethod } from '@browserhandle/protocol';
 
 /** Create a method-aware mock WS client that tracks all calls */
 function createMock() {
@@ -65,7 +65,7 @@ describe('Session tab auto-assignment', () => {
 
   beforeEach(async () => {
     mock = createMock();
-    const server = createWebClawServer({ wsClient: mock.wsClient });
+    const server = createBrowserHandleServer({ wsClient: mock.wsClient });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     mcpClient = new Client({ name: 'session-tab-test', version: '0.0.1' });
     await server.connect(serverTransport);

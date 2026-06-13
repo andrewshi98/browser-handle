@@ -4,7 +4,9 @@
  * back to the ISOLATED content script via window.postMessage.
  */
 
-const CHANNEL = 'webclaw-page-bridge';
+import { PAGE_BRIDGE_CHANNEL } from '@browserhandle/protocol';
+
+const CHANNEL = PAGE_BRIDGE_CHANNEL;
 
 // Listen for discovery requests from content script
 window.addEventListener('message', async (event) => {
@@ -52,7 +54,7 @@ async function handleDiscoverTools(): Promise<void> {
       '*'
     );
   } catch (err) {
-    console.error('[WebClaw PageBridge] Discovery error:', err);
+    console.error('[BrowserHandle PageBridge] Discovery error:', err);
     window.postMessage(
       { channel: CHANNEL, type: 'webmcp-tools-result', tools: [] },
       '*'

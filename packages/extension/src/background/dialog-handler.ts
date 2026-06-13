@@ -7,7 +7,7 @@
  * Strategy: attach debugger on first handle_dialog call, keep it attached
  * for the tab to catch dialog events. Detach when tab is removed.
  */
-import type { HandleDialogParams, HandleDialogResult } from 'webclaw-shared';
+import type { HandleDialogParams, HandleDialogResult } from '@browserhandle/protocol';
 
 interface PendingDialog {
   type: 'alert' | 'confirm' | 'prompt' | 'beforeunload';

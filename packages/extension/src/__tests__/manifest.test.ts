@@ -13,7 +13,7 @@ describe('manifest.json MV3 compliance', () => {
   });
 
   it('has required fields', () => {
-    expect(manifest.name).toBe('WebClaw');
+    expect(manifest.name).toBe('BrowserHandle');
     expect(manifest.version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(manifest.description).toBeTruthy();
   });

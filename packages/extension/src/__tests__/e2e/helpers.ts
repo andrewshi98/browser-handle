@@ -71,7 +71,7 @@ export async function launchBrowserWithExtension(): Promise<Browser> {
   const maxAttempts = 3;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const userDataDir = mkdtempSync(resolve(tmpdir(), 'webclaw-e2e-'));
+    const userDataDir = mkdtempSync(resolve(tmpdir(), 'browserhandle-e2e-'));
 
     let browser: Browser;
     try {
@@ -202,7 +202,7 @@ export async function sendToContentScript(
   return worker.evaluate(
     async (id: number, msg: Record<string, unknown>) => {
       return chrome.tabs.sendMessage(id, {
-        channel: 'webclaw-action',
+        channel: 'browserhandle-action',
         ...msg,
       });
     },
@@ -231,7 +231,7 @@ export async function openPageAndWaitForContentScript(
         const result = await worker.evaluate(
           async (id: number) => {
             return chrome.tabs.sendMessage(id, {
-              channel: 'webclaw-action',
+              channel: 'browserhandle-action',
               action: 'ping',
             });
           },

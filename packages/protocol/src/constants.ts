@@ -1,25 +1,27 @@
 /**
- * Shared constants for WebClaw.
+ * Shared constants for BrowserHandle.
  */
-
-/** Native Messaging host name (must match manifest) */
-export const NATIVE_MESSAGING_HOST = 'com.webclaw.bridge';
-
-/** Extension ID placeholder (set during build/install) */
-export const EXTENSION_ID_PLACEHOLDER = 'WEBCLAW_EXTENSION_ID';
-
-/** Maximum Native Messaging payload size (1MB) */
-export const NATIVE_MESSAGING_MAX_SIZE = 1024 * 1024;
 
 /** Service Worker keepalive interval in ms (25 seconds, under 30s limit) */
 export const KEEPALIVE_INTERVAL_MS = 25_000;
 
+/** chrome.alarms name used to keep the MV3 service worker alive */
+export const KEEPALIVE_ALARM = 'browserhandle-keepalive';
+
+/** chrome.runtime channel: service worker → content script commands */
+export const ACTION_CHANNEL = 'browserhandle-action';
+
+/** chrome.runtime channel: content script → service worker messages */
+export const CONTENT_CHANNEL = 'browserhandle-content';
 
 /** Content script ↔ page context message channel */
-export const PAGE_BRIDGE_CHANNEL = 'webclaw-page-bridge';
+export const PAGE_BRIDGE_CHANNEL = 'browserhandle-page-bridge';
 
 /** Side panel message type prefix */
-export const SIDE_PANEL_PREFIX = 'webclaw-sidepanel';
+export const SIDE_PANEL_PREFIX = 'browserhandle-sidepanel';
+
+/** chrome.runtime channel: service worker → side panel activity updates */
+export const SIDE_PANEL_UPDATE_CHANNEL = 'browserhandle-sidepanel-update';
 
 /** Default WebSocket port for MCP ↔ Extension communication */
 export const WEBSOCKET_DEFAULT_PORT = 18080;
@@ -28,7 +30,7 @@ export const WEBSOCKET_DEFAULT_PORT = 18080;
 export const WEBSOCKET_PORT_RANGE_SIZE = 10;
 
 /** Environment variable to override the WebSocket port */
-export const WEBSOCKET_PORT_ENV = 'WEBCLAW_PORT';
+export const WEBSOCKET_PORT_ENV = 'BROWSERHANDLE_PORT';
 
 /** Operation-specific timeouts in milliseconds */
 export const OPERATION_TIMEOUTS: Record<string, number> = {

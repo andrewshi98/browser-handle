@@ -1,5 +1,5 @@
 /**
- * WebClaw MCP Server.
+ * BrowserHandle MCP Server.
  *
  * Exposes 21 browser interaction tools via MCP protocol (stdio transport).
  * Communicates with the Chrome Extension via WebSocket.
@@ -9,8 +9,8 @@ import { z } from 'zod';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ERROR_RECOVERY } from 'webclaw-shared';
-import type { BridgeMessage, BridgeMethod, ErrorCode } from 'webclaw-shared';
+import { ERROR_RECOVERY } from '@browserhandle/protocol';
+import type { BridgeMessage, BridgeMethod, ErrorCode } from '@browserhandle/protocol';
 import { WebSocketClient } from './ws-client.js';
 
 /** Format an error response with recovery suggestions */
@@ -32,9 +32,9 @@ function formatErrorResponse(payload: unknown): {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_VERSION = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf8')).version;
 
-export function createWebClawServer(options: { wsClient: WebSocketClient }): McpServer {
+export function createBrowserHandleServer(options: { wsClient: WebSocketClient }): McpServer {
   const server = new McpServer({
-    name: 'webclaw',
+    name: 'browserhandle',
     version: PKG_VERSION,
   });
 

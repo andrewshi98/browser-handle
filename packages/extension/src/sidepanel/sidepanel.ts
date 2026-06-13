@@ -1,6 +1,7 @@
 /**
  * Side Panel - Real-time display of agent tool call activity.
  */
+import { SIDE_PANEL_UPDATE_CHANNEL } from '@browserhandle/protocol';
 
 const logContainer = document.getElementById('logContainer')!;
 const emptyState = document.getElementById('emptyState')!;
@@ -18,7 +19,7 @@ interface LogEntry {
 
 // Listen for activity updates from service worker
 chrome.runtime.onMessage.addListener((message) => {
-  if (message.channel === 'webclaw-sidepanel-update' && message.type === 'activity') {
+  if (message.channel === SIDE_PANEL_UPDATE_CHANNEL && message.type === 'activity') {
     addLogEntry(message.data as LogEntry);
   }
 });

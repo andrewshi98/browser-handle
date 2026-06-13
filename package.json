@@ -1,14 +1,14 @@
 {
-  "name": "webclaw-monorepo",
+  "name": "browserhandle-monorepo",
   "version": "0.1.0",
   "private": true,
   "description": "The first WebMCP-native browser agent",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kuroko1t/webclaw"
+    "url": "https://github.com/andrewshi98/browser-handle"
   },
-  "homepage": "https://github.com/kuroko1t/webclaw#readme",
+  "homepage": "https://github.com/andrewshi98/browser-handle#readme",
   "keywords": [
     "webmcp",
     "mcp",

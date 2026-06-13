@@ -8,7 +8,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const cliPath = resolve(__dirname, '../packages/mcp-server/dist/cli.js');
+const cliPath = resolve(__dirname, '../packages/mcp/dist/cli.js');
 const extensionPath = resolve(__dirname, '../packages/extension/dist');
 
 // --- Helpers ---
@@ -90,7 +90,7 @@ async function main() {
 
   child = spawn('node', [cliPath], {
     stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env, WEBCLAW_PORT: String(port) },
+    env: { ...process.env, BROWSERHANDLE_PORT: String(port) },
   });
 
   child.stdout.on('data', (chunk) => parseResponses(chunk.toString()));
@@ -164,7 +164,7 @@ async function main() {
     console.log(`\n  ${FAIL} Extension is running OLD code (v0.3.x). New methods are not supported.`);
     console.log(`  ${INFO} Please reload the extension:`);
     console.log(`    1. Open chrome://extensions in your browser`);
-    console.log(`    2. Find "WebClaw" extension`);
+    console.log(`    2. Find "BrowserHandle" extension`);
     console.log(`    3. Click the reload ↻ button`);
     console.log(`    4. Run this test again\n`);
     console.log(`  ${INFO} Alternatively, if using Load unpacked from packages/extension/dist/,`);

@@ -11,7 +11,7 @@ describe('MCP Server stdio startup', () => {
     const child = spawn('node', [cliPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
       timeout: 10000,
-      env: { ...process.env, WEBCLAW_PORT: '19070' },
+      env: { ...process.env, BROWSERHANDLE_PORT: '19070' },
     });
 
     let stderr = '';
@@ -67,6 +67,6 @@ describe('MCP Server stdio startup', () => {
     });
 
     const output = stdout + stderr;
-    expect(output).toContain('webclaw');
+    expect(output).toContain('browserhandle');
   });
 });

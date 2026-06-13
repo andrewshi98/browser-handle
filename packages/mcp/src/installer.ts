@@ -1,14 +1,14 @@
 /**
- * WebClaw installer.
+ * BrowserHandle installer.
  *
  * Outputs Claude Desktop configuration.
  */
 import { resolve } from 'node:path';
 import { platform, env } from 'node:process';
-import { WEBSOCKET_DEFAULT_PORT, WEBSOCKET_PORT_ENV } from 'webclaw-shared';
+import { WEBSOCKET_DEFAULT_PORT, WEBSOCKET_PORT_ENV } from '@browserhandle/protocol';
 
 export async function install(): Promise<void> {
-  console.log('WebClaw Installer');
+  console.log('BrowserHandle Installer');
   console.log('=================\n');
 
   outputClaudeDesktopConfig();
@@ -20,9 +20,9 @@ export async function install(): Promise<void> {
 function outputClaudeDesktopConfig(): void {
   const config = {
     mcpServers: {
-      webclaw: {
+      browserhandle: {
         command: 'npx',
-        args: ['-y', 'webclaw-mcp'],
+        args: ['-y', '@browserhandle/mcp'],
       },
     },
   };

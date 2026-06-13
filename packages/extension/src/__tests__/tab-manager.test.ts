@@ -69,7 +69,7 @@ describe('TabManager', () => {
       await tabManager.sendToContentScript(5, { action: 'snapshot' });
       // First call is ping, second is the actual message
       expect(mockSendMessage).toHaveBeenCalledWith(5, {
-        channel: 'webclaw-action',
+        channel: 'browserhandle-action',
         action: 'ping',
       });
     });
@@ -100,7 +100,7 @@ describe('TabManager', () => {
       await tabManager.sendToContentScript(5, { action: 'snapshot' });
       expect(mockSendMessage).toHaveBeenCalledTimes(1);
       expect(mockSendMessage).toHaveBeenCalledWith(5, {
-        channel: 'webclaw-action',
+        channel: 'browserhandle-action',
         action: 'snapshot',
       });
     });
