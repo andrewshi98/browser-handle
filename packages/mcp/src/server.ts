@@ -1,8 +1,9 @@
 /**
  * BrowserHandle MCP Server.
  *
- * Exposes 21 browser interaction tools via MCP protocol (stdio transport).
- * Communicates with the Chrome Extension via WebSocket.
+ * Exposes 21 browser-control tools plus handle-management tools via MCP
+ * (stdio transport). Commands are forwarded to a browser handle through the
+ * relay; this server is a thin adapter and owns no agent loop.
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
@@ -11,7 +12,7 @@ import { resolve, dirname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ERROR_RECOVERY } from '@browserhandle/protocol';
 import type { BridgeMessage, BridgeMethod, ErrorCode } from '@browserhandle/protocol';
-import { WebSocketClient } from './ws-client.js';
+import type { BrowserTransport } from './transport.js';
 
 /** Format an error response with recovery suggestions */
 function formatErrorResponse(payload: unknown): {
@@ -32,24 +33,25 @@ function formatErrorResponse(payload: unknown): {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_VERSION = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf8')).version;
 
-export function createBrowserHandleServer(options: { wsClient: WebSocketClient }): McpServer {
+export function createBrowserHandleServer(options: { transport: BrowserTransport }): McpServer {
   const server = new McpServer({
     name: 'browserhandle',
     version: PKG_VERSION,
   });
 
-  const wsClient = options.wsClient;
+  const transport = options.transport;
 
   // --- Session tab auto-assignment ---
-  // Each MCP session gets its own dedicated browser tab, preventing
-  // multiple sessions from stomping on each other's active tab.
+  // Each MCP session gets its own dedicated browser tab on the bound handle,
+  // preventing multiple sessions from stomping on each other's active tab.
+  // Reset whenever the bound handle changes (select_browser_handle).
   let sessionTabId: number | null = null;
 
   /** Resolve tabId: user-specified > session tab > auto-create new tab */
   async function resolveTabId(requestedTabId?: number): Promise<number> {
     if (requestedTabId !== undefined) return requestedTabId;
     if (sessionTabId !== null) return sessionTabId;
-    const response = await wsClient.requestWithRetry('newTab', {});
+    const response = await transport.requestWithRetry('newTab', {});
     if (response.type === 'error') {
       throw new Error('Failed to create session tab');
     }
@@ -68,7 +70,7 @@ export function createBrowserHandleServer(options: { wsClient: WebSocketClient }
     requestedTabId?: number
   ): Promise<BridgeMessage> {
     const resolvedTabId = await resolveTabId(requestedTabId);
-    const response = await wsClient.requestWithRetry(method, { ...params, tabId: resolvedTabId });
+    const response = await transport.requestWithRetry(method, { ...params, tabId: resolvedTabId });
 
     if (
       response.type === 'error' &&
@@ -79,7 +81,7 @@ export function createBrowserHandleServer(options: { wsClient: WebSocketClient }
       if (errorObj?.code === 'TAB_NOT_FOUND') {
         sessionTabId = null;
         const newTabId = await resolveTabId(requestedTabId);
-        return wsClient.requestWithRetry(method, { ...params, tabId: newTabId });
+        return transport.requestWithRetry(method, { ...params, tabId: newTabId });
       }
     }
 
@@ -347,7 +349,7 @@ export function createBrowserHandleServer(options: { wsClient: WebSocketClient }
       url: z.string().url().optional().describe('URL to open (defaults to new tab page)'),
     },
     async ({ url }) => {
-      const response = await wsClient.requestWithRetry('newTab', { url });
+      const response = await transport.requestWithRetry('newTab', { url });
       if (response.type === 'error') {
         return formatErrorResponse(response.payload);
       }
@@ -367,7 +369,7 @@ export function createBrowserHandleServer(options: { wsClient: WebSocketClient }
     'List all open browser tabs',
     {},
     async () => {
-      const response = await wsClient.requestWithRetry('listTabs', {});
+      const response = await transport.requestWithRetry('listTabs', {});
       if (response.type === 'error') {
         return formatErrorResponse(response.payload);
       }
@@ -394,7 +396,7 @@ export function createBrowserHandleServer(options: { wsClient: WebSocketClient }
       tabId: z.number().int().describe('Tab ID to switch to'),
     },
     async ({ tabId }) => {
-      const response = await wsClient.requestWithRetry('switchTab', { tabId });
+      const response = await transport.requestWithRetry('switchTab', { tabId });
       if (response.type === 'error') {
         return formatErrorResponse(response.payload);
       }
@@ -416,7 +418,7 @@ export function createBrowserHandleServer(options: { wsClient: WebSocketClient }
       tabId: z.number().int().describe('Tab ID to close'),
     },
     async ({ tabId }) => {
-      const response = await wsClient.requestWithRetry('closeTab', { tabId });
+      const response = await transport.requestWithRetry('closeTab', { tabId });
       if (response.type === 'error') {
         return formatErrorResponse(response.payload);
       }
@@ -586,7 +588,7 @@ export function createBrowserHandleServer(options: { wsClient: WebSocketClient }
       // lives on an existing tab.  Use: user-specified > session > omit
       // (extension falls back to the active tab when tabId is undefined).
       const resolvedTabId = tabId ?? sessionTabId ?? undefined;
-      const response = await wsClient.requestWithRetry('handleDialog', {
+      const response = await transport.requestWithRetry('handleDialog', {
         action,
         promptText,
         tabId: resolvedTabId,

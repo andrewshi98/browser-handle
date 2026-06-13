@@ -144,6 +144,9 @@ export function createRelay(options: RelayOptions = {}): Relay {
       return new Promise((resolve) => {
         wss.close(() => {
           httpServer.close(() => resolve());
+          // Force-drop lingering keep-alive / half-open agent connections so
+          // close() resolves promptly instead of waiting on idle sockets.
+          httpServer.closeAllConnections?.();
         });
       });
     },

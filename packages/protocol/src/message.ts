@@ -64,6 +64,8 @@ export function createError(
   };
 }
 
+const BRIDGE_MESSAGE_TYPES = new Set(['request', 'response', 'ack', 'error']);
+
 /** Type guard for bridge messages */
 export function isBridgeMessage(obj: unknown): obj is BridgeMessage {
   if (typeof obj !== 'object' || obj === null) return false;
@@ -71,7 +73,9 @@ export function isBridgeMessage(obj: unknown): obj is BridgeMessage {
   return (
     typeof msg.id === 'string' &&
     typeof msg.type === 'string' &&
+    BRIDGE_MESSAGE_TYPES.has(msg.type) &&
     typeof msg.method === 'string' &&
+    'payload' in msg &&
     typeof msg.timestamp === 'number'
   );
 }

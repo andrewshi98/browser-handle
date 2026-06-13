@@ -143,6 +143,21 @@ describe('call routing', () => {
     if (!body.ok) expect(body.error.code).toBe('HANDLER_ERROR');
   });
 
+  it('returns a 413 (not a dropped connection) when the body exceeds the limit', async () => {
+    // 33 MB > MAX_BODY_BYTES (32 MB). The relay must still deliver the 413
+    // response rather than destroying the socket (ECONNRESET).
+    const oversized = 'x'.repeat(33 * 1024 * 1024);
+    const res = await fetch(`${h.base}/v1/handles/h1/call`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: oversized,
+    });
+    expect(res.status).toBe(413);
+    const body = (await res.json()) as CallResponse;
+    expect(body.ok).toBe(false);
+    if (!body.ok) expect(body.error.code).toBe('INVALID_REQUEST');
+  });
+
   it('returns 404 HANDLE_NOT_FOUND for an unknown handle', async () => {
     const { status, body } = await call(h.base, 'ghost', { method: 'ping' });
     expect(status).toBe(404);

@@ -120,7 +120,7 @@ export function createHttpHandler(deps: HttpApiDeps) {
       const durationMs = Date.now() - start;
 
       if (message.type === 'error') {
-        const errPayload = message.payload as { code?: string; message?: string; details?: unknown };
+        const errPayload = (message.payload ?? {}) as { code?: string; message?: string; details?: unknown };
         log.info('call', { handleId, method, durationMs, outcome: errPayload.code ?? 'error' });
         const body: CallResponse = {
           ok: false,
@@ -173,16 +173,26 @@ function readBody(req: IncomingMessage, maxBytes: number): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let total = 0;
+    let aborted = false;
     req.on('data', (chunk: Buffer) => {
-      total += chunk.length;
-      if (total > maxBytes) {
+      if (aborted) return;
+      // Reject before buffering an over-limit chunk. Pause (not destroy) the
+      // request so the caller's 413 response can still be written and flushed;
+      // Node closes the connection once the response ends on an undrained body.
+      if (total + chunk.length > maxBytes) {
+        aborted = true;
+        req.pause();
         reject(new Error(`Request body exceeds ${maxBytes} bytes`));
-        req.destroy();
         return;
       }
+      total += chunk.length;
       chunks.push(chunk);
     });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    req.on('error', reject);
+    req.on('end', () => {
+      if (!aborted) resolve(Buffer.concat(chunks).toString('utf8'));
+    });
+    req.on('error', (err) => {
+      if (!aborted) reject(err);
+    });
   });
 }

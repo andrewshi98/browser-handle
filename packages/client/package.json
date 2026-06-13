@@ -1,0 +1,45 @@
+{
+  "name": "@browserhandle/client",
+  "version": "0.1.0",
+  "description": "BrowserHandle client - typed HTTP client for the relay's agent API",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andrewshi98/browser-handle",
+    "directory": "packages/client"
+  },
+  "homepage": "https://github.com/andrewshi98/browser-handle#readme",
+  "keywords": [
+    "browser-control",
+    "browserhandle",
+    "ai-agent",
+    "client"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist .turbo",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "@browserhandle/protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

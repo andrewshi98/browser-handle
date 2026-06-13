@@ -103,6 +103,12 @@ export function attachBrowserSocket(ws: WebSocket, deps: BrowserSocketDeps): voi
   });
 
   function handleRegister(message: unknown): void {
+    // A first message has arrived (it parsed as JSON); the register deadline
+    // has done its job whether or not validation below succeeds. Clearing it
+    // here prevents the deadline from firing a redundant close on the socket
+    // we are about to close on a validation failure.
+    clearTimeout(registerDeadline);
+
     const parsed = registerMessageSchema.safeParse(message);
     if (!parsed.success) {
       sendRelayError('INVALID_REQUEST', 'First message must be a valid register message');
@@ -126,7 +132,6 @@ export function attachBrowserSocket(ws: WebSocket, deps: BrowserSocketDeps): voi
       return;
     }
 
-    clearTimeout(registerDeadline);
     handleId = parsed.data.handleId;
     registry.register(parsed.data, ws);
 

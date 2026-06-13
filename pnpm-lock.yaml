@@ -17,6 +17,22 @@ importers:
 
   examples/webmcp-demo-site: {}
 
+  packages/client:
+    dependencies:
+      '@browserhandle/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.33
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@20.19.33)(jsdom@25.0.1(canvas@2.11.2))
+
   packages/extension:
     dependencies:
       '@browserhandle/protocol':
